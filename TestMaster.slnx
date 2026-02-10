@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/TestMaster.Presentation/TestMaster.Presentation.csproj" />
+  </Folder>
+</Solution>
