@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using KEGE_Emulator.Services;
+using Microsoft.Extensions.Logging;
 
 namespace TestMaster.Presentation;
 
@@ -21,6 +22,9 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 
+		builder.Services.AddSingleton<ExamTimerService>();
+		builder.Services.AddSingleton<ExamStateService>();
+		
 		return builder.Build();
 	}
 }

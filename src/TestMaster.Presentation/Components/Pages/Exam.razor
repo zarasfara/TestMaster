@@ -1,0 +1,10 @@
+﻿<!-- Pages/Exam.razor -->
+@page "/exam"
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/exam/info", replace: true);
+    }
+}

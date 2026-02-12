@@ -1,0 +1,40 @@
+﻿@page "/"
+@layout MainLayout
+@inject NavigationManager NavigationManager
+
+<div class="login-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 50px); padding: 20px;">
+    <h1 class="header-title" style="color: white; text-align: center; margin-bottom: 30px;">
+        Единый государственный экзамен Информатика и ИКТ
+    </h1>
+
+    <div style="background: #2d2d3d; padding: 25px; border-radius: 8px; width: 100%; max-width: 600px;">
+        <p style="margin-bottom: 20px; color: #aaa;">Введите номер вашего бланка регистрации</p>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" @bind-value="part1" class="answer-input" placeholder="2" maxlength="1" style="width: 60px;" />
+            <input type="text" @bind-value="part2" class="answer-input" placeholder="832503" maxlength="6" style="flex: 1;" />
+            <input type="text" @bind-value="part3" class="answer-input" placeholder="195017" maxlength="6" style="flex: 1;" />
+        </div>
+
+        <p style="font-size: 14px; color: #aaa; margin-bottom: 20px;">
+            На данном этапе Вам необходимо ввести с клавиатуры номер бланка регистрации и нажать «Далее». Кнопка «Далее» будет доступна после ввода номера бланка, включающего 13 цифр.
+        </p>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="btn btn-primary" @onclick="GoToExam" disabled="@(string.IsNullOrWhiteSpace(part1) || part2.Length != 6 || part3.Length != 6)">
+                Далее
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string part1 = "";
+    private string part2 = "";
+    private string part3 = "";
+
+    private void GoToExam()
+    {
+        NavigationManager.NavigateTo("/exam");
+    }
+}

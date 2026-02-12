@@ -1,0 +1,297 @@
+﻿@page "/exam/{id:int}"
+@using KEGE_Emulator.Services
+@implements IDisposable
+@inject ExamTimerService TimerService
+@inject ExamStateService ExamState
+@layout MainLayout
+@inject NavigationManager NavigationManager
+
+<div class="header-bar">
+    <div class="header-title">КИМ № 25107025  БР № 2832503195017</div>
+    <div class="header-actions">
+        <div style="margin-right: 20px; font-weight: bold;">@TimeDisplay</div>
+        <button class="btn btn-danger" @onclick="ConfirmFinish">Завершить экзамен досрочно</button>
+        <button class="btn" title="Помощь">?</button>
+    </div>
+</div>
+
+<div style="display: flex; height: calc(100vh - 50px);">
+    <!-- Левая панель -->
+    <div class="sidebar">
+        <div class="sidebar-counter">@answeredCount/27</div>
+
+        <div class="nav-btn" title="Вверх" @onclick="GoToPrevGroup">↑</div>
+        <div class="nav-btn" title="Инфо" @onclick="GoToInfo">i</div>
+
+        <div class="question-list">
+            @for (int i = 1; i <= 27; i++)
+            {
+                var taskId = i;
+                var isCurrent = i == CurrentId;
+                var isAnswered = ExamState.Answers.ContainsKey(i);
+                <div class="q-btn @(isCurrent ? "active" : "") @(isAnswered ? "answered" : "")"
+                     @onclick="() => NavigateTo(taskId)">
+                    @i
+                </div>
+            }
+        </div>
+
+        <div class="nav-btn" title="Назад" @onclick="GoToPrev">←</div>
+        <div class="nav-btn" title="Вперёд" @onclick="GoToNext">→</div>
+        <div class="nav-btn" title="Вниз" @onclick="GoToNextGroup">↓</div>
+    </div>
+
+    <!-- Основной контент -->
+    <div class="main-content">
+        <div class="task-header">
+            Задание @CurrentId (@GetTaskId())
+        </div>
+
+        <div class="task-body">
+            @((MarkupString)GetTaskText())
+        </div>
+
+        <!-- Динамические поля ввода -->
+        @if (IsMultiInput(CurrentId))
+        {
+            <div style="margin-top: 20px;">
+                @switch (CurrentId)
+                {
+                    case 17:
+                    case 18:
+                    case 20:
+                    case 26:
+                        <table class="answer-table" style="margin: 0 auto; border-collapse: collapse; width: 200px;">
+                            <tr>
+                                <th style="border:1px solid #444; padding: 8px;">1</th>
+                                <th style="border:1px solid #444; padding: 8px;">2</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[0]" class="cell-input" />
+                                </td>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[1]" class="cell-input" />
+                                </td>
+                            </tr>
+                        </table>
+                        break;
+                    case 27:
+                        <table class="answer-table" style="margin: 0 auto; border-collapse: collapse; width: 200px;">
+                            <tr>
+                                <th style="border:1px solid #444; padding: 8px;">1</th>
+                                <th style="border:1px solid #444; padding: 8px;">2</th>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[0]" class="cell-input" />
+                                </td>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[1]" class="cell-input" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[0]" class="cell-input" />
+                                </td>
+                                <td style="border:1px solid #444; padding: 8px;">
+                                    <input type="text" @bind-value="multiAnswer[1]" class="cell-input" />
+                                </td>
+                            </tr>
+                        </table>
+                        break;
+                    case 25:
+                        <table class="answer-table" style="margin: 0 auto; border-collapse: collapse; width: 280px;">
+                            <tr>
+                                <th style="border:1px solid #444; padding: 6px;">1</th>
+                                <th style="border:1px solid #444; padding: 6px;">2</th>
+                            </tr>
+                            @for (int i = 0; i < 10; i++)
+                            {
+                                <tr>
+                                    <td style="border:1px solid #444; padding: 6px;">
+                                        <input type="text" @bind-value="multiAnswer[i * 2]" class="cell-input" />
+                                    </td>
+                                    <td style="border:1px solid #444; padding: 6px;">
+                                        <input type="text" @bind-value="multiAnswer[i * 2 + 1]" class="cell-input" />
+                                    </td>
+                                </tr>
+                            }
+                        </table>
+                        break;
+                }
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="btn btn-success" @onclick="SaveMultiAnswer">Сохранить ответ</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <input type="text" @bind-value="currentAnswer" class="answer-input" placeholder="Введите ответ" />
+            <button class="btn btn-success" @onclick="SaveAnswer">Сохранить ответ</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private int CurrentId => Id;
+    private string currentAnswer = "";
+    private string[] multiAnswer = new string[20];
+    private int answeredCount => ExamState.Answers.Count;
+
+    protected override void OnParametersSet()
+    {
+        if (Id < 1 || Id > 27)
+        {
+            NavigationManager.NavigateTo("/exam/1", replace: true);
+            return;
+        }
+
+        for (int i = 0; i < multiAnswer.Length; i++)
+            multiAnswer[i] = "";
+
+        if (ExamState.Answers.TryGetValue(CurrentId, out var saved))
+        {
+            if (IsMultiInput(CurrentId))
+            {
+                var parts = saved.Split(',');
+                for (int i = 0; i < Math.Min(parts.Length, multiAnswer.Length); i++)
+                {
+                    multiAnswer[i] = parts[i];
+                }
+            }
+            else
+            {
+                currentAnswer = saved;
+            }
+        }
+    }
+
+    private bool IsMultiInput(int id) => id is 17 or 18 or 20 or 25 or 26 or 27;
+
+    private string GetTaskId() => CurrentId switch
+    {
+        1 => "№23738",
+        24 => "№23762",
+        _ => $"№{CurrentId * 100 + 123}"
+    };
+
+    private string GetTaskText()
+    {
+        var imagePath = $"/images/task{CurrentId}.png";
+        var fileLinks = new List<string>();
+
+        switch (CurrentId)
+        {
+            case 3:
+            case 9:
+            case 18:
+            case 22:
+                fileLinks.Add($"<a href='/files/{CurrentId}.ods' download='{CurrentId}.ods' style='color:#4CAF50; display:inline-flex; align-items:center; gap:6px; margin-top:10px;'>📄 {CurrentId}.ods</a>");
+                break;
+            case 10:
+                fileLinks.Add($"<a href='/files/{CurrentId}.odt' download='{CurrentId}.odt' style='color:#4CAF50; display:inline-flex; align-items:center; gap:6px; margin-top:10px;'>📄 {CurrentId}.odt</a>");
+                break;
+            case 17:
+            case 24:
+            case 26:
+                fileLinks.Add($"<a href='/files/{CurrentId}.txt' download='{CurrentId}.txt' style='color:#4CAF50; display:inline-flex; align-items:center; gap:6px; margin-top:10px;'>📄 {CurrentId}.txt</a>");
+                break;
+            case 27:
+                fileLinks.Add($"<a href='/files/27_A.txt' download='27_A.txt' style='color:#4CAF50; display:inline-flex; align-items:center; gap:6px; margin-right:10px; margin-top:10px;'>📄 27_A.txt</a>");
+                fileLinks.Add($"<a href='/files/27_B.txt' download='27_B.txt' style='color:#4CAF50; display:inline-flex; align-items:center; gap:6px; margin-top:10px;'>📄 27_B.txt</a>");
+                break;
+        }
+
+        var filesHtml = fileLinks.Any() ? string.Join(" ", fileLinks) : "";
+
+        return $@"
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <img src='{imagePath}' 
+                 style='max-width: 100%; height: auto; border: 1px solid #444; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);'
+                 alt='Задание {CurrentId}' />
+        </div>
+        {filesHtml}
+        <p style='color: #aaa; font-size: 14px; margin-top: 15px;'>
+            Ответ вводится ниже.
+        </p>";
+    }
+
+    private void NavigateTo(int id)
+    {
+        NavigationManager.NavigateTo($"/exam/{Math.Clamp(id, 1, 27)}");
+    }
+
+    private void GoToInfo() => NavigationManager.NavigateTo("/exam/info");
+
+    private void SaveAnswer()
+    {
+        if (!string.IsNullOrWhiteSpace(currentAnswer))
+        {
+            ExamState.Answers[CurrentId] = currentAnswer.Trim();
+        }
+    }
+
+    private void SaveMultiAnswer()
+    {
+        var count = CurrentId switch
+        {
+            25 => 20,
+            _ => 2
+        };
+
+        var parts = new List<string>();
+        for (int i = 0; i < count; i++)
+        {
+            parts.Add((multiAnswer[i] ?? "").Trim());
+        }
+
+        ExamState.Answers[CurrentId] = string.Join(",", parts);
+    }
+
+    private void GoToPrev() => NavigateTo(CurrentId - 1);
+    private void GoToNext() => NavigateTo(CurrentId + 1);
+    private void GoToPrevGroup() => NavigateTo(CurrentId - 5);
+    private void GoToNextGroup() => NavigateTo(CurrentId + 5);
+
+    private void ConfirmFinish() => NavigationManager.NavigateTo("/results");
+
+    private string TimeDisplay => FormatTime(TimerService.RemainingSeconds);
+
+    protected override void OnInitialized()
+    {
+        if (!TimerService.IsRunning)
+        {
+            TimerService.Start();
+        }
+
+        TimerService.OnTick += OnTimerTick;
+        TimerService.OnTimeExpired += OnTimeExpired;
+    }
+
+    private void OnTimerTick(int seconds)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTimeExpired()
+    {
+        InvokeAsync(() =>
+        {
+            NavigationManager.NavigateTo("/results", forceLoad: true);
+        });
+    }
+
+    public void Dispose()
+    {
+        TimerService.OnTick -= OnTimerTick;
+        TimerService.OnTimeExpired -= OnTimeExpired;
+    }
+
+    private string FormatTime(int totalSeconds)
+    {
+        var ts = TimeSpan.FromSeconds(totalSeconds);
+        return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+    }
+}
