@@ -131,7 +131,7 @@ else
         };
     }
 
-    private void SaveAnswer()
+    private async Task SaveAnswer()
     {
         if (!string.IsNullOrWhiteSpace(_currentAnswer))
         {
@@ -139,12 +139,11 @@ else
         }
         else
         {
-            // Если ответ пустой, удаляем его
             ExamState.Answers.Remove(Id);
         }
     }
 
-    private void SaveMultiAnswer()
+    private async Task SaveMultiAnswer()
     {
         var count = Id switch
         {
@@ -159,7 +158,6 @@ else
 
         var answer = string.Join(",", parts);
         
-        // Если все ответы пустые, удаляем их
         if (answer.All(c => c == ','))
         {
             ExamState.Answers.Remove(Id);

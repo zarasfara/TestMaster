@@ -24,6 +24,7 @@ public static class MauiProgram
 
 		builder.Services.AddSingleton<IExamTimerService, ExamTimerService>();
 		builder.Services.AddSingleton<IExamStateService, ExamStateService>();
+		builder.Services.AddSingleton<IConnectivityService, ConnectivityService>();
 		
 		return builder.Build();
 	}

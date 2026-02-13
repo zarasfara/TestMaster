@@ -2,7 +2,8 @@
 @using TestMaster.Presentation.Services
 @layout MainLayout
 @inject NavigationManager NavigationManager
-@inject ExamStateService ExamState
+@inject IExamStateService ExamState
+@inject IConnectivityService ConnectivityService
 
 <div class="header-bar">
     <div class="header-title">Единый государственный экзамен Информатика и ИКТ (КЕГЭ)</div>
@@ -14,8 +15,8 @@
     @{
         var primaryScore = CalculatePrimaryScore();
         var secondaryScore = ConvertToSecondary(primaryScore);
-        var maxPrimary = 29;
-        var maxSecondary = 100;
+        const int maxPrimary = 29;
+        const int maxSecondary = 100;
     }
 
     <!-- Блок "X/100" (вторичный балл) -->
@@ -30,23 +31,23 @@
 
     <table class="results-table">
         <thead>
-            <tr>
-                <th>№</th>
-                <th>Балл</th>
-                <th>Ваш ответ</th>
-            </tr>
+        <tr>
+            <th>№</th>
+            <th>Балл</th>
+            <th>Ваш ответ</th>
+        </tr>
         </thead>
         <tbody>
-            @for (int i = 1; i <= 27; i++)
-            {
-                var userAnswer = ExamState.Answers.GetValueOrDefault(i, "");
-                var (score, correctAnswer) = GetScoreAndCorrectAnswer(i, userAnswer);
-                <tr>
-                    <td>@i</td>
-                    <td>@score</td>
-                    <td>@FormatAnswer(userAnswer)</td>
-                </tr>
-            }
+        @for (var i = 1; i <= 27; i++)
+        {
+            var userAnswer = ExamState.Answers.GetValueOrDefault(i, "");
+            var (score, correctAnswer) = GetScoreAndCorrectAnswer(i, userAnswer);
+            <tr>
+                <td>@i</td>
+                <td>@score</td>
+                <td>@FormatAnswer(userAnswer)</td>
+            </tr>
+        }
         </tbody>
     </table>
 
@@ -56,8 +57,9 @@
 </div>
 
 @code {
+
     // Таблица перевода первичного → вторичного балла (ФИПИ, 2025)
-    private readonly Dictionary<int, int> PrimaryToSecondary = new()
+    private readonly Dictionary<int, int> _primaryToSecondary = new()
     {
         { 0, 0 },
         { 1, 7 }, { 2, 14 }, { 3, 20 }, { 4, 27 }, { 5, 34 },
@@ -68,7 +70,7 @@
         { 25, 90 }, { 26, 93 }, { 27, 95 }, { 28, 98 }, { 29, 100 }
     };
 
-    private readonly Dictionary<int, string> correctAnswers = new()
+    private readonly Dictionary<int, string> _correctAnswers = new()
     {
         { 1, "52" },
         { 2, "zyxw" },
@@ -99,7 +101,7 @@
         { 27, "38471,61225,142058,25299" }
     };
 
-    private readonly Dictionary<int, int> maxPoints = new()
+    private readonly Dictionary<int, int> _maxPoints = new()
     {
         { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 },
         { 6, 1 }, { 7, 1 }, { 8, 1 }, { 9, 1 }, { 10, 1 },
@@ -111,25 +113,26 @@
 
     private int CalculatePrimaryScore()
     {
-        int total = 0;
-        for (int i = 1; i <= 27; i++)
+        var total = 0;
+        for (var i = 1; i <= 27; i++)
         {
             var userAnswer = ExamState.Answers.GetValueOrDefault(i, "");
             var (score, _) = GetScoreAndCorrectAnswer(i, userAnswer);
             total += score;
         }
+
         return total;
     }
 
     private int ConvertToSecondary(int primary)
     {
-        return PrimaryToSecondary.TryGetValue(primary, out var sec) ? sec : 0;
+        return _primaryToSecondary.GetValueOrDefault(primary, 0);
     }
 
     private (int score, string correct) GetScoreAndCorrectAnswer(int taskId, string userAnswer)
     {
-        var correct = correctAnswers.GetValueOrDefault(taskId, "—");
-        var maxPoint = maxPoints.GetValueOrDefault(taskId, 0);
+        var correct = _correctAnswers.GetValueOrDefault(taskId, "—");
+        var maxPoint = _maxPoints.GetValueOrDefault(taskId, 0);
 
         if (string.IsNullOrWhiteSpace(userAnswer))
             return (0, correct);
@@ -144,11 +147,12 @@
             if (userParts.Length == correctParts.Length)
             {
                 var correctCount = 0;
-                for (int i = 0; i < userParts.Length; i++)
+                for (var i = 0; i < userParts.Length; i++)
                 {
                     if (userParts[i].Trim().Equals(correctParts[i].Trim(), StringComparison.OrdinalIgnoreCase))
                         correctCount++;
                 }
+
                 return (correctCount, correct);
             }
         }
@@ -156,13 +160,18 @@
         return (0, correct);
     }
 
-    private string FormatAnswer(string answer)
+    private static string FormatAnswer(string answer)
     {
-        if (string.IsNullOrEmpty(answer)) return "—";
-        if (answer.Contains(","))
-            return string.Join(", ", answer.Split(','));
-        return answer;
+        if (string.IsNullOrEmpty(answer))
+        {
+            return "—";
+        }
+        return answer.Contains(",") ? string.Join(", ", answer.Split(',')) : answer;
     }
 
-    private void FinishExam() => NavigationManager.NavigateTo("/");
+    private async Task FinishExam()
+    {
+        await ConnectivityService.CheckUntilConnectedAsync(async () => await InvokeAsync(() => NavigationManager.NavigateTo("/")));
+    }
+
 }
