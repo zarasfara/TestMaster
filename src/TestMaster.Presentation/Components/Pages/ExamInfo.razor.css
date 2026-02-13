@@ -1,0 +1,118 @@
+﻿.exam-info-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.exam-info-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.exam-info-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 10px 0;
+}
+
+.exam-info-card {
+    background: linear-gradient(135deg, #2a2f3a 0%, #1e2329 100%);
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.exam-info-card h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #28a745;
+    margin-top: 0;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.exam-info-card h2::before {
+    content: "✓";
+    font-size: 24px;
+}
+
+.exam-info-card p {
+    color: #ccc;
+    font-size: 15px;
+    line-height: 1.8;
+    margin: 10px 0;
+}
+
+.exam-info-card strong {
+    color: #fff;
+}
+
+.info-section {
+    margin-bottom: 20px;
+}
+
+.info-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #28a745;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-section-title::before {
+    content: "📋";
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-list li {
+    padding: 10px 0;
+    padding-left: 25px;
+    color: #ccc;
+    font-size: 15px;
+    line-height: 1.6;
+    position: relative;
+}
+
+.info-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.exam-info-highlight {
+    background: rgba(40, 167, 69, 0.1);
+    border-left: 4px solid #28a745;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.exam-info-highlight p {
+    margin: 0;
+    color: #fff;
+    font-weight: 500;
+}
+
+.task-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.task-body {
+    padding: 20px;
+}
+

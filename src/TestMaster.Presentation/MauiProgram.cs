@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using TestMaster.Presentation.Services;
 
 namespace TestMaster.Presentation;
 
@@ -21,6 +22,10 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 
+		builder.Services.AddSingleton<IExamTimerService, ExamTimerService>();
+		builder.Services.AddSingleton<IExamStateService, ExamStateService>();
+		builder.Services.AddSingleton<IConnectivityService, ConnectivityService>();
+		
 		return builder.Build();
 	}
 }

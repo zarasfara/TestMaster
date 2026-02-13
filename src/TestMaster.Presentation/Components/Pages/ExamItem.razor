@@ -1,0 +1,171 @@
+﻿@page "/exam/{id:int}"
+@using TestMaster.Presentation.Services
+@layout ExamLayout
+@inject IExamStateService ExamState
+@inject NavigationManager NavigationManager
+
+<div class="task-header">
+    Задание @Id (@GetTaskId())
+</div>
+
+<div class="task-body">
+    @((MarkupString)GetTaskText())
+</div>
+
+@if (IsMultiInput(Id))
+{
+    <div class="answer-section multi-input">
+        @RenderAnswerTable(Id)
+        <div class="button-container">
+            <button class="btn btn-success" @onclick="SaveMultiAnswer">Сохранить ответ</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="answer-section single-input">
+        <input type="text" @bind="_currentAnswer" class="answer-input" placeholder="Введите ответ"/>
+        <button class="btn btn-success" @onclick="SaveAnswer">Сохранить ответ</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private string _currentAnswer = string.Empty;
+    private readonly string[] _multiAnswer = new string[20];
+
+    protected override void OnParametersSet()
+    {
+        if (Id is < 1 or > 27)
+        {
+            NavigationManager.NavigateTo("/exam/1", replace: true);
+            return;
+        }
+
+        _currentAnswer = "";
+        Array.Clear(_multiAnswer, 0, _multiAnswer.Length);
+
+        if (!ExamState.Answers.TryGetValue(Id, out var saved)) return;
+        if (IsMultiInput(Id))
+        {
+            var parts = saved.Split(',');
+            for (var i = 0; i < Math.Min(parts.Length, _multiAnswer.Length); i++)
+                _multiAnswer[i] = parts[i];
+        }
+        else
+        {
+            _currentAnswer = saved;
+        }
+    }
+
+    private static bool IsMultiInput(int id)
+    {
+        return id is 17 or 18 or 20 or 25 or 26 or 27;
+    }
+
+    private string GetTaskId()
+    {
+        return Id switch
+        {
+            1 => "№23738",
+            24 => "№23762",
+            _ => $"№{Id * 100 + 123}"
+        };
+    }
+
+    private string GetTaskText()
+    {
+        var imagePath = $"/images/task{Id}.png";
+
+        return $"""
+                <div class="task-image-container">
+                    <img src="{imagePath}"
+                         class="task-image"
+                         alt="Задание {Id}" />
+                </div>
+                <p class="task-description">
+                    Ответ вводится ниже.
+                </p>
+                """;
+    }
+
+    private RenderFragment RenderAnswerTable(int id)
+    {
+        var columnCount = id switch
+        {
+            25 => 20,
+            27 => 4,
+            _ => 2
+        };
+
+        return builder =>
+        {
+            var seq = 0;
+            builder.OpenElement(seq++, "table");
+            builder.AddAttribute(seq++, "class", "answer-table");
+
+            for (var i = 0; i < columnCount; i += 2)
+            {
+                builder.OpenElement(seq++, "tr");
+
+                for (var j = 0; j < 2 && i + j < columnCount; j++)
+                {
+                    builder.OpenElement(seq++, "td");
+                    builder.OpenElement(seq++, "input");
+                    builder.AddAttribute(seq++, "type", "text");
+                    builder.AddAttribute(seq++, "class", "table-input");
+                    builder.AddAttribute(seq++, "value", _multiAnswer[i + j]);
+                    builder.AddAttribute(seq++, "onchange",
+                        EventCallback.Factory.CreateBinder<string>(
+                            this, val => _multiAnswer[i + j] = val, _multiAnswer[i + j]));
+                    builder.CloseElement();
+
+                    builder.CloseElement();
+                }
+
+                builder.CloseElement();
+            }
+
+            builder.CloseElement();
+        };
+    }
+
+    private async Task SaveAnswer()
+    {
+        if (!string.IsNullOrWhiteSpace(_currentAnswer))
+        {
+            ExamState.Answers[Id] = _currentAnswer.Trim();
+        }
+        else
+        {
+            ExamState.Answers.Remove(Id);
+        }
+    }
+
+    private async Task SaveMultiAnswer()
+    {
+        var count = Id switch
+        {
+            25 => 20,
+            27 => 4,
+            _ => 2
+        };
+
+        var parts = new List<string>();
+        for (var i = 0; i < count; i++)
+            parts.Add((_multiAnswer[i] ?? "").Trim());
+
+        var answer = string.Join(",", parts);
+        
+        if (answer.All(c => c == ','))
+        {
+            ExamState.Answers.Remove(Id);
+        }
+        else
+        {
+            ExamState.Answers[Id] = answer;
+        }
+    }
+
+}

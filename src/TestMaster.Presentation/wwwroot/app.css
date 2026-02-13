@@ -99,3 +99,213 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+/* === ЦВЕТА КАК НА KOMPEGE.RU === */
+:root {
+    --header-bg: #0c2547;
+    --sidebar-bg: #222;
+    --sidebar-item-bg: #333;
+    --sidebar-active: #007AFF;
+    --content-bg: #1e1e2e;
+    --text-light: #e0e0e0;
+    --text-dark: #f0f0f0;
+    --border: #444;
+    --btn-primary: #007AFF;
+    --btn-success: #28a745;
+    --btn-danger: #dc3545;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: var(--text-dark);
+    font-family: 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
+
+/* Шапка */
+.header-bar {
+    background-color: var(--header-bg);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.header-title {
+    font-size: 18px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--btn-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-success {
+    background-color: var(--btn-success);
+    color: white;
+}
+
+.btn-danger {
+    background-color: var(--btn-danger);
+    color: white;
+}
+
+/* Левая панель */
+.sidebar {
+    width: 70px;
+    background-color: var(--sidebar-bg);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 10px;
+    height: calc(100vh - 50px);
+    overflow-y: auto;
+}
+
+.sidebar-counter {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
+.q-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--sidebar-item-bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.q-btn.active {
+    background-color: var(--sidebar-active);
+    border-color: var(--btn-primary);
+}
+
+.nav-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--sidebar-item-bg);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+/* Центральный контент */
+.main-content {
+    flex: 1;
+    background-color: var(--content-bg);
+    padding: 20px;
+    overflow-y: auto;
+    height: calc(100vh - 50px);
+}
+
+.task-header {
+    margin-bottom: 20px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.task-body {
+    line-height: 1.6;
+    margin-bottom: 20px;
+    white-space: pre-wrap;
+}
+
+.answer-input {
+    width: 100%;
+    padding: 12px 16px;
+    background-color: #2d2d3d;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: white;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.answer-input:focus {
+    outline: none;
+    border-color: var(--btn-primary);
+}
+
+/* Таблица результатов */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.results-table th,
+.results-table td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.results-table th {
+    background-color: #333;
+    font-weight: 600;
+}
+
+/* Иконки */
+.sidebar .nav-btn,
+.main-content span[title] {
+    user-select: none;
+}
+
+/* Файл-ссылка */
+.main-content a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+.main-content a:hover {
+    text-decoration: underline;
+}
+
+.nav-btn.active {
+    background-color: var(--sidebar-active);
+    border-color: var(--btn-primary);
+    color: white;
+}
