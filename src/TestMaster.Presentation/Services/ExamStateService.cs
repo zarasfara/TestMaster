@@ -1,7 +1,4 @@
-﻿// Services/ExamStateService.cs
-using System.Collections.Generic;
-
-namespace KEGE_Emulator.Services;
+﻿namespace TestMaster.Presentation.Services;
 
 public class ExamStateService
 {

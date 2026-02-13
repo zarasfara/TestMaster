@@ -1,0 +1,153 @@
+﻿@using TestMaster.Presentation.Services
+@implements IDisposable
+@inject ExamTimerService TimerService
+@inject NavigationManager NavigationManager
+@inject ExamStateService ExamState
+
+<div class="header-bar">
+    <div class="header-title">КИМ № 25107025 БР № 2832503195017</div>
+    <div class="header-actions">
+        <div class="timer">@TimeDisplay</div>
+        <button class="btn btn-danger" @onclick="ConfirmFinish">Завершить экзамен досрочно</button>
+        <button class="btn btn-help" title="Помощь">?</button>
+    </div>
+</div>
+
+<div style="display: flex; height: calc(100vh - 50px);">
+
+    <div class="sidebar">
+        <div class="sidebar-counter">@AnsweredCount/27</div>
+
+        <div class="nav-buttons-row">
+            <div class="nav-btn" title="Вверх" @onclick="GoToPrevGroup">↑</div>
+            <div class="nav-btn" title="Инфо" @onclick="GoToInfo">i</div>
+        </div>
+
+        <div class="question-list-container">
+            <div class="question-list">
+                @for (var i = 1; i <= 27; i++)
+                {
+                    var taskId = i;
+
+                    var isCurrent = taskId == CurrentTaskId;
+                    var isAnswered = ExamState.Answers.ContainsKey(taskId);
+
+                    <div class="q-btn @(isCurrent ? "active" : "") @(isAnswered ? "answered" : "")"
+                         @onclick="() => NavigateTo(taskId)">
+                        @taskId
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <div class="nav-buttons-row">
+            <div class="nav-btn" title="Назад" @onclick="GoToPrev">←</div>
+            <div class="nav-btn" title="Вперёд" @onclick="GoToNext">→</div>
+            <div class="nav-btn" title="Вниз" @onclick="GoToNextGroup">↓</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        @Body
+    </div>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Body { get; set; }
+
+    private int AnsweredCount => ExamState.Answers.Count;
+    private string TimeDisplay => FormatTime(TimerService.RemainingSeconds);
+
+    private int CurrentTaskId => GetTaskIdFromUrl();
+
+    protected override void OnInitialized()
+    {
+        if (!TimerService.IsRunning)
+            TimerService.Start();
+
+        TimerService.OnTick += OnTimerTick;
+        TimerService.OnTimeExpired += OnTimeExpired;
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTimerTick(int seconds)
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTimeExpired()
+    {
+        InvokeAsync(() => { NavigationManager.NavigateTo("/results", true); });
+    }
+
+    private int GetTaskIdFromUrl()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var segments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments.Length == 2 && segments[0] == "exam" && int.TryParse(segments[1], out var id))
+            return id;
+
+        return 1;
+    }
+
+    private void NavigateTo(int id)
+    {
+        var target = $"/exam/{Math.Clamp(id, 1, 27)}";
+
+        if (NavigationManager.Uri.EndsWith(target))
+            return;
+
+        NavigationManager.NavigateTo(target, replace: false);
+    }
+
+    private void GoToInfo()
+    {
+        NavigationManager.NavigateTo("/exam/info");
+    }
+
+    private void GoToPrev()
+    {
+        NavigateTo(CurrentTaskId - 1);
+    }
+
+    private void GoToNext()
+    {
+        NavigateTo(CurrentTaskId + 1);
+    }
+
+    private void GoToPrevGroup()
+    {
+        NavigateTo(CurrentTaskId - 5);
+    }
+
+    private void GoToNextGroup()
+    {
+        NavigateTo(CurrentTaskId + 5);
+    }
+
+    private void ConfirmFinish()
+    {
+        NavigationManager.NavigateTo("/results");
+    }
+
+    private string FormatTime(int totalSeconds)
+    {
+        var ts = TimeSpan.FromSeconds(totalSeconds);
+        return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+    }
+
+    public void Dispose()
+    {
+        TimerService.OnTick -= OnTimerTick;
+        TimerService.OnTimeExpired -= OnTimeExpired;
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+
+}

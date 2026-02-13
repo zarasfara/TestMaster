@@ -1,105 +1,15 @@
 ﻿@page "/exam/info"
-@layout MainLayout
-@using KEGE_Emulator.Services
-@implements IDisposable
-@inject ExamTimerService TimerService
-@inject NavigationManager NavigationManager
+@layout ExamLayout
 
-<div class="header-bar">
-    <div class="header-title">КИМ № 25107025  БР № 2832503195017</div>
-    <div class="header-actions">
-        <div style="margin-right: 20px; font-weight: bold;">@TimeDisplay</div>
-        <button class="btn btn-danger" @onclick="ConfirmFinish">Завершить экзамен досрочно</button>
-        <button class="btn" title="Помощь">?</button>
-    </div>
+<div class="task-header">
+    Информация об экзамене
 </div>
 
-<div style="display: flex; height: calc(100vh - 50px);">
-    <!-- Левая панель -->
-    <div class="sidebar">
-        <div class="sidebar-counter">0/27</div>
-
-        <div class="nav-btn active" title="Вверх">↑</div>
-        <div class="nav-btn active" title="Инфо">i</div>
-
-        <div class="question-list">
-            @for (int i = 1; i <= 27; i++)
-            {
-                var taskId = i;
-                <div class="q-btn" @onclick="() => NavigateTo(taskId)">
-                    @i
-                </div>
-            }
-        </div>
-
-        <div class="nav-btn" title="Назад">←</div>
-        <div class="nav-btn" title="Вперёд">→</div>
-        <div class="nav-btn" title="Вниз">↓</div>
-    </div>
-
-    <!-- Основной контент -->
-    <div class="main-content">
-        <div class="task-header">
-            Информация об экзамене
-        </div>
-
-        <div class="task-body">
-            <p><strong>Единый государственный экзамен по информатике и ИКТ</strong></p>
-            <p>Экзаменационная работа состоит из 27 заданий.</p>
-            <p>На выполнение работы отводится 235 минут.</p>
-            <p>Ответы на задания 1–23 записываются в виде числа или последовательности символов.</p>
-            <p>Задания 24–27 требуют написания программы или обработки файла.</p>
-            <p>Будьте внимательны при вводе ответов!</p>
-        </div>
-    </div>
+<div class="task-body">
+    <p><strong>Единый государственный экзамен по информатике и ИКТ</strong></p>
+    <p>Экзаменационная работа состоит из 27 заданий.</p>
+    <p>На выполнение работы отводится 235 минут.</p>
+    <p>Ответы на задания 1–23 записываются в виде числа или последовательности символов.</p>
+    <p>Задания 24–27 требуют написания программы или обработки файла.</p>
+    <p>Будьте внимательны при вводе ответов!</p>
 </div>
-
-@code {
-    private void NavigateTo(int id)
-    {
-        NavigationManager.NavigateTo($"/exam/{id}");
-    }
-
-    private void ConfirmFinish()
-    {
-        NavigationManager.NavigateTo("/results");
-    }
-
-    private string TimeDisplay => FormatTime(TimerService.RemainingSeconds);
-
-    protected override void OnInitialized()
-    {
-        if (!TimerService.IsRunning)
-        {
-            TimerService.Start();
-        }
-
-        TimerService.OnTick += OnTimerTick;
-        TimerService.OnTimeExpired += OnTimeExpired;
-    }
-
-    private void OnTimerTick(int seconds)
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnTimeExpired()
-    {
-        InvokeAsync(() =>
-        {
-            NavigationManager.NavigateTo("/results", forceLoad: true);
-        });
-    }
-
-    public void Dispose()
-    {
-        TimerService.OnTick -= OnTimerTick;
-        TimerService.OnTimeExpired -= OnTimeExpired;
-    }
-
-    private string FormatTime(int totalSeconds)
-    {
-        var ts = TimeSpan.FromSeconds(totalSeconds);
-        return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-    }
-}

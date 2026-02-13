@@ -1,7 +1,6 @@
-﻿// Services/ExamTimerService.cs
-using System.Timers;
+﻿using System.Timers;
 
-namespace KEGE_Emulator.Services;
+namespace TestMaster.Presentation.Services;
 
 public class ExamTimerService : IDisposable
 {
