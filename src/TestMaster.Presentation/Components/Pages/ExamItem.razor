@@ -1,7 +1,7 @@
 ﻿@page "/exam/{id:int}"
 @using TestMaster.Presentation.Services
 @layout ExamLayout
-@inject ExamStateService ExamState
+@inject IExamStateService ExamState
 @inject NavigationManager NavigationManager
 
 <div class="task-header">
@@ -14,33 +14,16 @@
 
 @if (IsMultiInput(Id))
 {
-    <div style="margin-top: 20px;">
-        @switch (Id)
-        {
-            case 17:
-            case 18:
-            case 20:
-            case 26:
-                @RenderTable(2)
-                break;
-
-            case 27:
-                @RenderTable(4)
-                break;
-
-            case 25:
-                @RenderTable(20)
-                break;
-        }
-
-        <div style="text-align: center; margin-top: 15px;">
+    <div class="answer-section multi-input">
+        @RenderAnswerTable(Id)
+        <div class="button-container">
             <button class="btn btn-success" @onclick="SaveMultiAnswer">Сохранить ответ</button>
         </div>
     </div>
 }
 else
 {
-    <div style="display: flex; gap: 10px; align-items: center;">
+    <div class="answer-section single-input">
         <input type="text" @bind="_currentAnswer" class="answer-input" placeholder="Введите ответ"/>
         <button class="btn btn-success" @onclick="SaveAnswer">Сохранить ответ</button>
     </div>
@@ -94,37 +77,44 @@ else
     private string GetTaskText()
     {
         var imagePath = $"/images/task{Id}.png";
+
         return $"""
-                        
-                {imagePath}'
-                                 style='max-width:100%; height:auto; border:1px solid #444; border-radius:4px;'
-                                 alt='Задание {Id}' />
-                        </div>
-                        <p style='color:#aaa; font-size:14px;'>Ответ вводится ниже.</p>
+                <div class="task-image-container">
+                    <img src="{imagePath}"
+                         class="task-image"
+                         alt="Задание {Id}" />
+                </div>
+                <p class="task-description">
+                    Ответ вводится ниже.
+                </p>
                 """;
     }
 
-    private RenderFragment RenderTable(int count)
+    private RenderFragment RenderAnswerTable(int id)
     {
+        var columnCount = id switch
+        {
+            25 => 20,
+            27 => 4,
+            _ => 2
+        };
+
         return builder =>
         {
             var seq = 0;
-
             builder.OpenElement(seq++, "table");
             builder.AddAttribute(seq++, "class", "answer-table");
-            builder.AddAttribute(seq++, "style", "margin:0 auto; border-collapse:collapse;");
 
-            for (var i = 0; i < count; i += 2)
+            for (var i = 0; i < columnCount; i += 2)
             {
                 builder.OpenElement(seq++, "tr");
 
-                for (var j = 0; j < 2 && i + j < count; j++)
+                for (var j = 0; j < 2 && i + j < columnCount; j++)
                 {
                     builder.OpenElement(seq++, "td");
-                    builder.AddAttribute(seq++, "style", "border:1px solid #444; padding:6px;");
-
                     builder.OpenElement(seq++, "input");
                     builder.AddAttribute(seq++, "type", "text");
+                    builder.AddAttribute(seq++, "class", "table-input");
                     builder.AddAttribute(seq++, "value", _multiAnswer[i + j]);
                     builder.AddAttribute(seq++, "onchange",
                         EventCallback.Factory.CreateBinder<string>(

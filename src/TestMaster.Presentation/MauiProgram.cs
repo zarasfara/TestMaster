@@ -22,8 +22,8 @@ public static class MauiProgram
 		builder.Logging.AddDebug();
 #endif
 
-		builder.Services.AddSingleton<ExamTimerService>();
-		builder.Services.AddSingleton<ExamStateService>();
+		builder.Services.AddSingleton<IExamTimerService, ExamTimerService>();
+		builder.Services.AddSingleton<IExamStateService, ExamStateService>();
 		
 		return builder.Build();
 	}
