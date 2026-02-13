@@ -134,7 +134,14 @@ else
     private void SaveAnswer()
     {
         if (!string.IsNullOrWhiteSpace(_currentAnswer))
+        {
             ExamState.Answers[Id] = _currentAnswer.Trim();
+        }
+        else
+        {
+            // Если ответ пустой, удаляем его
+            ExamState.Answers.Remove(Id);
+        }
     }
 
     private void SaveMultiAnswer()
@@ -150,7 +157,17 @@ else
         for (var i = 0; i < count; i++)
             parts.Add((_multiAnswer[i] ?? "").Trim());
 
-        ExamState.Answers[Id] = string.Join(",", parts);
+        var answer = string.Join(",", parts);
+        
+        // Если все ответы пустые, удаляем их
+        if (answer.All(c => c == ','))
+        {
+            ExamState.Answers.Remove(Id);
+        }
+        else
+        {
+            ExamState.Answers[Id] = answer;
+        }
     }
 
 }
