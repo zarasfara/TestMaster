@@ -2,7 +2,8 @@
 @layout MainLayout
 @inject NavigationManager NavigationManager
 
-<div class="login-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 50px); padding: 20px;">
+<div class="login-container"
+     style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 50px); padding: 20px;">
     <h1 class="header-title" style="color: white; text-align: center; margin-bottom: 30px;">
         Единый государственный экзамен Информатика и ИКТ
     </h1>
@@ -11,17 +12,44 @@
         <p style="margin-bottom: 20px; color: #aaa;">Введите номер вашего бланка регистрации</p>
 
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <input type="text" @bind-value="part1" class="answer-input" placeholder="2" maxlength="1" style="width: 60px;" />
-            <input type="text" @bind-value="part2" class="answer-input" placeholder="832503" maxlength="6" style="flex: 1;" />
-            <input type="text" @bind-value="part3" class="answer-input" placeholder="195017" maxlength="6" style="flex: 1;" />
+            <input @ref="_inputPart1"
+                   type="text"
+                   @bind-value="_part1"
+                   @bind-value:event="oninput"
+                   @bind-value:after="OnInputPart1"
+                   class="answer-input"
+                   placeholder="2"
+                   maxlength="1"
+                   style="width: 60px;"/>
+
+            <input @ref="_inputPart2"
+                   type="text"
+                   @bind-value="_part2"
+                   @bind-value:event="oninput"
+                   @bind-value:after="OnInputPart2"
+                   class="answer-input"
+                   placeholder="832503"
+                   maxlength="6"
+                   style="flex: 1;"/>
+
+            <input @ref="_inputPart3"
+                   type="text"
+                   @bind-value="_part3"
+                   @bind-value:event="oninput"
+                   @bind-value:after="OnInputPart3"
+                   class="answer-input"
+                   placeholder="195017"
+                   maxlength="6"
+                   style="flex: 1;"/>
         </div>
 
         <p style="font-size: 14px; color: #aaa; margin-bottom: 20px;">
-            На данном этапе Вам необходимо ввести с клавиатуры номер бланка регистрации и нажать «Далее». Кнопка «Далее» будет доступна после ввода номера бланка, включающего 13 цифр.
+            На данном этапе Вам необходимо ввести с клавиатуры номер бланка регистрации и нажать «Далее». Кнопка «Далее»
+            будет доступна после ввода номера бланка, включающего 13 цифр.
         </p>
 
         <div style="display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" @onclick="GoToExam" disabled="@(string.IsNullOrWhiteSpace(part1) || part2.Length != 6 || part3.Length != 6)">
+            <button class="btn btn-primary" @onclick="GoToExam" disabled="@(!IsFormValid())">
                 Далее
             </button>
         </div>
@@ -29,12 +57,51 @@
 </div>
 
 @code {
-    private string part1 = "";
-    private string part2 = "";
-    private string part3 = "";
+    private string _part1 = string.Empty;
+    private string _part2 = string.Empty;
+    private string _part3 = string.Empty;
+
+    private ElementReference _inputPart1;
+    private ElementReference _inputPart2;
+    private ElementReference _inputPart3;
+
+    private async Task OnInputPart1()
+    {
+        if (_part1.Length == 1)
+        {
+            await _inputPart2.FocusAsync();
+        }
+    }
+
+    private async Task OnInputPart2()
+    {
+        if (_part2.Length == 6)
+        {
+            await _inputPart3.FocusAsync();
+        }
+    }
+
+    private Task OnInputPart3()
+    {
+        if (_part3.Length == 6 && IsFormValid())
+        {
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private bool IsFormValid()
+    {
+        return !string.IsNullOrWhiteSpace(_part1) &&
+               _part2.Length == 6 &&
+               _part3.Length == 6;
+    }
 
     private void GoToExam()
     {
-        NavigationManager.NavigateTo("/exam");
+        if (IsFormValid())
+        {
+            NavigationManager.NavigateTo("/exam");
+        }
     }
 }
