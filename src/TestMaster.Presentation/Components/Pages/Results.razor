@@ -171,7 +171,12 @@
 
     private async Task FinishExam()
     {
-        await ConnectivityService.CheckUntilConnectedAsync(async () => await InvokeAsync(() => NavigationManager.NavigateTo("/")));
-    }
+        _ = ConnectivityService.CheckUntilConnectedAsync(async () =>
+        {
+            await Task.CompletedTask;
+            Console.WriteLine("Интернет восстановлен! Результаты отправлены.");
+        });
 
+        NavigationManager.NavigateTo("/");
+    }
 }
