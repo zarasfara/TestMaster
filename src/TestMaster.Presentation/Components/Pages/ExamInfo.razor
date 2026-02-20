@@ -53,4 +53,62 @@
             <li>Кнопка "ℹ" в заголовке всегда откроет эту страницу</li>
         </ul>
     </div>
+    
+    <div class="exam-info-card">
+        <h2>Файлы заданий</h2>
+        <p>Ниже вы можете скачать все файлы, приложенные к заданиям экзамена.</p>
+        <div style="text-align: center; margin-top: 15px;">
+            <button class="btn btn-primary" @onclick="DownloadAllFiles">Скачать все файлы</button>
+        </div>
+    </div>
 </div>
+
+@code {
+    [Inject] IJSRuntime JSRuntime { get; set; }
+
+    private bool _jsInjected = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !(_jsInjected))
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+            window.downloadAllFiles = function() {
+                const files = [
+                    '/files/3.ods',
+                    '/files/9.ods',
+                    '/files/10.odt',
+                    '/files/17.txt',
+                    '/files/18.ods',
+                    '/files/22.ods',
+                    '/files/24.txt',
+                    '/files/26.txt',
+                    '/files/27_A.txt',
+                    '/files/27_B.txt'
+                ];
+                files.forEach(url => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = url.split('/').pop();
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+            };
+        ");
+            _jsInjected = true;
+        }
+    }
+    
+    private async Task DownloadAllFiles()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("downloadAllFiles");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Не удалось скачать файлы. Попробуйте скачать вручную.");
+        }
+    }
+}
