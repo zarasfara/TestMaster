@@ -1,6 +1,9 @@
 ﻿@page "/"
+@using TestMaster.Presentation.Services
 @layout MainLayout
 @inject NavigationManager NavigationManager
+@inject IExamStateService ExamState
+@inject IExamResultService ExamResultService
 
 <div class="login-container"
      style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 50px); padding: 20px;">
@@ -49,11 +52,18 @@
         </p>
 
         <div style="display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" @onclick="GoToExam" disabled="@(!IsFormValid())">
-                Далее
+            <button class="btn btn-primary" @onclick="GoToExamAsync" disabled="@(!IsFormValid() || _isLoading)">
+                @_continueText
             </button>
         </div>
-        
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div style="margin-top: 12px; color: #ff6b7a; font-size: 14px;">
+                @_errorMessage
+            </div>
+        }
+
         <div style="margin-top: 20px; text-align: center; padding-top: 15px; border-top: 1px solid #444;">
             <a href="/admin/login" style="color: #28a745; text-decoration: none; font-size: 14px;">
                 🔒 Вход в админ панель
@@ -66,6 +76,10 @@
     private string _part1 = string.Empty;
     private string _part2 = string.Empty;
     private string _part3 = string.Empty;
+
+    private string _errorMessage = string.Empty;
+    private bool _isLoading;
+    private string _continueText = "Далее";
 
     private ElementReference _inputPart1;
     private ElementReference _inputPart2;
@@ -103,11 +117,36 @@
                _part3.Length == 6;
     }
 
-    private void GoToExam()
+    private async Task GoToExamAsync()
     {
-        if (IsFormValid())
+        if (!IsFormValid())
         {
-            NavigationManager.NavigateTo("/exam/info");
+            return;
         }
+
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        _continueText = "Проверка...";
+        StateHasChanged();
+
+        var blankNumber = $"{_part1}{_part2}{_part3}";
+        var lookup = await ExamResultService.TryLoadStudentAsync(blankNumber);
+
+        if (!lookup.Success || lookup.Student == null)
+        {
+            _errorMessage = lookup.Error ?? "Не удалось проверить номер бланка";
+            _isLoading = false;
+            _continueText = "Далее";
+            StateHasChanged();
+            return;
+        }
+
+        ExamState.BlankNumber = lookup.Student.BlankNumber;
+        ExamState.Student = lookup.Student;
+
+        _isLoading = false;
+        _continueText = "Далее";
+        NavigationManager.NavigateTo("/exam/info");
     }
+
 }

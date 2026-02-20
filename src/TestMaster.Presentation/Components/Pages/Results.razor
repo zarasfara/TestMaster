@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IExamStateService ExamState
 @inject IConnectivityService ConnectivityService
+@inject IExamResultService ExamResultService
 
 <div class="header-bar">
     <div class="header-title">Единый государственный экзамен Информатика и ИКТ (КЕГЭ)</div>
@@ -52,11 +53,24 @@
     </table>
 
     <div style="text-align: center; margin-top: 20px;">
-        <button class="btn btn-danger" @onclick="FinishExam">Завершить экзамен</button>
+        <button class="btn btn-danger" @onclick="FinishExam" disabled="@_isSaving">
+            @_finishButtonText
+        </button>
+
+        @if (!string.IsNullOrEmpty(_saveMessage))
+        {
+            <div style="margin-top: 12px; color: @(_saveSuccess ? "#28a745" : "#ff6b7a"); font-size: 14px;">
+                @_saveMessage
+            </div>
+        }
     </div>
 </div>
 
 @code {
+    private bool _isSaving;
+    private string _finishButtonText = "Завершить экзамен";
+    private string _saveMessage = string.Empty;
+    private bool _saveSuccess;
 
     // Таблица перевода первичного → вторичного балла (ФИПИ, 2025)
     private readonly Dictionary<int, int> _primaryToSecondary = new()
@@ -166,17 +180,70 @@
         {
             return "—";
         }
+
         return answer.Contains(",") ? string.Join(", ", answer.Split(',')) : answer;
     }
 
     private async Task FinishExam()
     {
-        _ = ConnectivityService.CheckUntilConnectedAsync(async () =>
-        {
-            await Task.CompletedTask;
-            Console.WriteLine("Интернет восстановлен! Результаты отправлены.");
-        });
+        _isSaving = true;
+        _finishButtonText = "Сохранение...";
+        _saveMessage = string.Empty;
+        StateHasChanged();
 
-        NavigationManager.NavigateTo("/");
+        // Проверяем наличие данных студента
+        if (ExamState.Student == null)
+        {
+            _saveMessage = "⚠️ Не удалось сохранить результаты: данные студента отсутствуют";
+            _saveSuccess = false;
+            _isSaving = false;
+            _finishButtonText = "Завершить экзамен";
+            StateHasChanged();
+
+            await Task.Delay(3000);
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        // Сохраняем результаты
+        var saveResult = await ExamResultService.SaveResultsAsync(ExamState.Student, ExamState.Answers);
+
+        if (saveResult.Success)
+        {
+            _saveMessage = "✓ Результаты успешно сохранены";
+            _saveSuccess = true;
+            StateHasChanged();
+
+            // Запускаем проверку интернета в фоне
+            _ = ConnectivityService.CheckUntilConnectedAsync(async () =>
+            {
+                await Task.CompletedTask;
+                Console.WriteLine("Интернет восстановлен! Результаты можно отправить.");
+            });
+
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            if (saveResult.IsPermissionError)
+            {
+                _saveMessage = $"⚠️ Нет прав на запись файла. Обратитесь к администратору.\n{saveResult.Error}";
+                _saveSuccess = false;
+                StateHasChanged();
+
+                await Task.Delay(5000);
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                _saveMessage = $"✗ Ошибка сохранения: {saveResult.Error}";
+                _saveSuccess = false;
+                _isSaving = false;
+                _finishButtonText = "Попробовать снова";
+                StateHasChanged();
+            }
+        }
     }
+
 }
