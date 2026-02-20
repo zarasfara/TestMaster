@@ -14,18 +14,105 @@
 
 @if (IsMultiInput(Id))
 {
-    <div class="answer-section multi-input">
-        @RenderAnswerTable(Id)
-        <div class="button-container">
-            <button class="btn btn-success" @onclick="SaveMultiAnswer">Сохранить ответ</button>
+    <div class="kege-table-wrapper">
+        <div class="table-header">Введите или скопируйте свой ответ в поля таблицы</div>
+
+        @switch (Id)
+        {
+            case 17:
+            case 18:
+            case 20:
+            case 26:
+                <table class="kege-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>1</th>
+                            <th>2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="row-number">1</td>
+                            <td><input type="text" @bind-value="_multiAnswer[0]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                            <td><input type="text" @bind-value="_multiAnswer[1]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+                break;
+
+            case 27:
+                <table class="kege-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>1</th>
+                            <th>2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="row-number">1</td>
+                            <td><input type="text" @bind-value="_multiAnswer[0]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                            <td><input type="text" @bind-value="_multiAnswer[1]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                        </tr>
+                        <tr>
+                            <td class="row-number">2</td>
+                            <td><input type="text" @bind-value="_multiAnswer[2]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                            <td><input type="text" @bind-value="_multiAnswer[3]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                        </tr>
+                    </tbody>
+                </table>
+                break;
+
+            case 25:
+                <table class="kege-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>1</th>
+                            <th>2</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < 10; i++)
+                        {
+                            var index = i;
+                            <tr>
+                                <td class="row-number">@(index + 1)</td>
+                                <td><input type="text" @bind-value="_multiAnswer[index * 2]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                                <td><input type="text" @bind-value="_multiAnswer[index * 2 + 1]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                break;
+        }
+
+        <div class="answer-buttons">
+            <button class="btn btn-outline" @onclick="ClearMultiAnswer">Очистить</button>
+            <button class="btn btn-primary" 
+                    @onclick="SaveMultiAnswer"
+                    disabled="@_isAnswerSaved">
+                @_saveButtonText
+            </button>
         </div>
     </div>
 }
 else
 {
     <div class="answer-section single-input">
-        <input type="text" @bind="_currentAnswer" class="answer-input" placeholder="Введите ответ"/>
-        <button class="btn btn-success" @onclick="SaveAnswer">Сохранить ответ</button>
+        <input type="text" 
+               @bind-value="_currentAnswer" 
+               @oninput="OnAnswerChanged"
+               class="answer-input" 
+               placeholder="Введите ответ"/>
+        <button class="btn btn-success" 
+                @onclick="SaveAnswer"
+                disabled="@_isAnswerSaved">
+            @_saveButtonText
+        </button>
+        <button class="btn btn-outline" @onclick="ClearAnswer">Очистить</button>
     </div>
 }
 
@@ -34,6 +121,9 @@ else
 
     private string _currentAnswer = string.Empty;
     private readonly string[] _multiAnswer = new string[20];
+    
+    private bool _isAnswerSaved = false;
+    private string _saveButtonText = "Сохранить ответ";
 
     protected override void OnParametersSet()
     {
@@ -80,55 +170,60 @@ else
 
         return $"""
                 <div class="task-image-container">
-                    <img src="{imagePath}"
-                         class="task-image"
-                         alt="Задание {Id}" />
+                    <img src="/images/task{Id}.png" class="task-image" alt="Задание {Id}" />
                 </div>
-                <p class="task-description">
-                    Ответ вводится ниже.
-                </p>
+                {GetFileLinks()}
+                <p class="task-description">Ответ вводится ниже.</p>
                 """;
     }
-
-    private RenderFragment RenderAnswerTable(int id)
+    
+    private string GetFileLinks()
     {
-        var columnCount = id switch
+        var links = new List<string>();
+
+        switch (Id)
         {
-            25 => 20,
-            27 => 4,
-            _ => 2
-        };
+            case 3:
+            case 9:
+            case 18:
+            case 22:
+                links.Add($"<a href='/files/{Id}.ods' download='{Id}.ods' class='file-link'>📄 {Id}.ods</a>");
+                break;
+            case 10:
+                links.Add($"<a href='/files/{Id}.odt' download='{Id}.odt' class='file-link'>📄 {Id}.odt</a>");
+                break;
+            case 17:
+            case 24:
+            case 26:
+                links.Add($"<a href='/files/{Id}.txt' download='{Id}.txt' class='file-link'>📄 {Id}.txt</a>");
+                break;
+            case 27:
+                links.Add($"<a href='/files/27_A.txt' download='27_A.txt' class='file-link'>📄 27_A.txt</a>");
+                links.Add($"<a href='/files/27_B.txt' download='27_B.txt' class='file-link'>📄 27_B.txt</a>");
+                break;
+        }
 
-        return builder =>
+        return links.Any() ? $"<div class='file-links'>{string.Join(" ", links)}</div>" : "";
+    }
+
+    private void OnAnswerChanged(ChangeEventArgs e)
+    {
+        if (_isAnswerSaved)
         {
-            var seq = 0;
-            builder.OpenElement(seq++, "table");
-            builder.AddAttribute(seq++, "class", "answer-table");
+            _isAnswerSaved = false;
+            _saveButtonText = "Сохранить ответ";
+            StateHasChanged();
+        }
+    }
 
-            for (var i = 0; i < columnCount; i += 2)
-            {
-                builder.OpenElement(seq++, "tr");
-
-                for (var j = 0; j < 2 && i + j < columnCount; j++)
-                {
-                    builder.OpenElement(seq++, "td");
-                    builder.OpenElement(seq++, "input");
-                    builder.AddAttribute(seq++, "type", "text");
-                    builder.AddAttribute(seq++, "class", "table-input");
-                    builder.AddAttribute(seq++, "value", _multiAnswer[i + j]);
-                    builder.AddAttribute(seq++, "onchange",
-                        EventCallback.Factory.CreateBinder<string>(
-                            this, val => _multiAnswer[i + j] = val, _multiAnswer[i + j]));
-                    builder.CloseElement();
-
-                    builder.CloseElement();
-                }
-
-                builder.CloseElement();
-            }
-
-            builder.CloseElement();
-        };
+    private void OnMultiAnswerChanged(ChangeEventArgs e)
+    {
+        if (_isAnswerSaved)
+        {
+            _isAnswerSaved = false;
+            _saveButtonText = "Сохранить ответ";
+            StateHasChanged();
+        }
     }
 
     private async Task SaveAnswer()
@@ -136,10 +231,9 @@ else
         if (!string.IsNullOrWhiteSpace(_currentAnswer))
         {
             ExamState.Answers[Id] = _currentAnswer.Trim();
-        }
-        else
-        {
-            ExamState.Answers.Remove(Id);
+            _isAnswerSaved = true;
+            _saveButtonText = "Ответ сохранён";
+            StateHasChanged();
         }
     }
 
@@ -157,15 +251,36 @@ else
             parts.Add((_multiAnswer[i] ?? "").Trim());
 
         var answer = string.Join(",", parts);
-        
-        if (answer.All(c => c == ','))
-        {
-            ExamState.Answers.Remove(Id);
-        }
-        else
-        {
-            ExamState.Answers[Id] = answer;
-        }
+        ExamState.Answers[Id] = answer;
+
+        _isAnswerSaved = true;
+        _saveButtonText = "Ответ сохранён";
+        StateHasChanged();
     }
 
+    private void ClearAnswer()
+    {
+        _currentAnswer = "";
+        ExamState.Answers.Remove(Id);
+        _isAnswerSaved = false;
+        _saveButtonText = "Сохранить ответ";
+        StateHasChanged();
+    }
+
+    private void ClearMultiAnswer()
+    {
+        var count = Id switch
+        {
+            25 => 20,
+            27 => 4,
+            _ => 2
+        };
+        for (int i = 0; i < count; i++)
+            _multiAnswer[i] = "";
+
+        ExamState.Answers.Remove(Id);
+        _isAnswerSaved = false;
+        _saveButtonText = "Сохранить ответ";
+        StateHasChanged();
+    }
 }
