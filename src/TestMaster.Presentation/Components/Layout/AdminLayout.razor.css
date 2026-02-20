@@ -1,0 +1,73 @@
+﻿.admin-layout {
+    display: flex;
+    height: 100vh;
+    background: #1e2329;
+}
+
+.admin-sidebar {
+    width: 260px;
+    background: #2a2f3a;
+    border-right: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-header {
+    padding: 20px;
+    border-bottom: 1px solid #444;
+}
+
+.admin-header h2 {
+    color: #28a745;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.admin-nav {
+    flex: 1;
+    padding: 20px 0;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: #ccc;
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(40, 167, 69, 0.1);
+    color: #fff;
+}
+
+.nav-item.active {
+    background: rgba(40, 167, 69, 0.15);
+    color: #28a745;
+    border-left-color: #28a745;
+}
+
+.nav-icon {
+    font-size: 20px;
+}
+
+.admin-footer {
+    padding: 20px;
+    border-top: 1px solid #444;
+}
+
+.admin-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+.btn-block {
+    width: 100%;
+}
+

@@ -26,6 +26,8 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IExamStateService, ExamStateService>();
 		builder.Services.AddSingleton<IConnectivityService, ConnectivityService>();
 		builder.Services.AddSingleton<IFileDownloadService, FileDownloadService>();
+		builder.Services.AddSingleton<IAuthService, AuthService>();
+		builder.Services.AddSingleton<IBlankNumberService, BlankNumberService>();
 		
 		return builder.Build();
 	}
