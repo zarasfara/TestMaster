@@ -14,21 +14,21 @@
         <div class="admin-header">
             <h2>Админ панель</h2>
         </div>
-        
+
         <nav class="admin-nav">
-            <a href="/admin" class="nav-item @(IsActive("/admin"))">
-                <span class="nav-icon">📋</span>
-                <span>Генерация бланков</span>
+            <a href="/admin/process-participants" class="nav-item @(IsActive("/admin/process-participants"))">
+                <span class="nav-icon">👥</span>
+                <span>Обработка участников</span>
             </a>
         </nav>
-        
+
         <div class="admin-footer">
             <button class="btn btn-danger btn-block" @onclick="Logout">
                 Выйти
             </button>
         </div>
     </div>
-    
+
     <div class="admin-content">
         @Body
     </div>
@@ -44,7 +44,7 @@
             Navigation.NavigateTo("/admin/login", true);
             return;
         }
-        
+
         AuthService.OnAuthStateChanged += OnAuthStateChanged;
     }
 
@@ -69,6 +69,12 @@
     private string IsActive(string href)
     {
         var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
+        // Если это корневая admin, показываем как активную для process-participants
+        if (href == "/admin/process-participants" && (currentPath == "/admin" || currentPath == "/admin/"))
+        {
+            return "active";
+        }
+
         return currentPath == href ? "active" : "";
     }
 
@@ -76,5 +82,9 @@
     {
         AuthService.OnAuthStateChanged -= OnAuthStateChanged;
     }
+
 }
+
+
+
 

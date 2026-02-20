@@ -2,9 +2,5 @@
 
 public interface IBlankNumberService
 {
-    Task<string> GenerateBlankNumbersExcelAsync(int count);
-    Task<string?> GenerateBlankNumbersExcelWithPickerAsync(int count);
-    List<string> GenerateBlankNumbers(int count);
+    Task<string?> ProcessParticipantsFileAsync(string filePath);
 }
-
-
