@@ -77,9 +77,12 @@ public sealed class FileDownloadService : IFileDownloadService
 
         // Получаем handle окна
         var window = Application.Current?.Windows[0];
-        if (window?.Handler?.PlatformView is not MauiWinUIWindow winUIWindow) return null;
+        if (window?.Handler?.PlatformView is not MauiWinUIWindow winUiWindow)
+        {
+            return null;
+        }
 
-        var hwnd = winUIWindow.WindowHandle;
+        var hwnd = winUiWindow.WindowHandle;
         InitializeWithWindow.Initialize(folderPicker, hwnd);
 
         folderPicker.SuggestedStartLocation = PickerLocationId.Downloads;
