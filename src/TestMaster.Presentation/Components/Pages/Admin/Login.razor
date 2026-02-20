@@ -1,0 +1,82 @@
+﻿@page "/admin/login"
+@using TestMaster.Presentation.Services
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="login-container">
+    <div class="login-card">
+        <h1>Вход в админ панель</h1>
+        
+        <div class="login-form">
+            <div class="form-group">
+                <label>Логин</label>
+                <input type="text" @bind="_username" class="form-control" placeholder="Введите логин" />
+            </div>
+            
+            <div class="form-group">
+                <label>Пароль</label>
+                <input type="password" @bind="_password" class="form-control" placeholder="Введите пароль" @onkeydown="HandleKeyPress" />
+            </div>
+            
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-error">
+                    @_errorMessage
+                </div>
+            }
+            
+            <button class="btn btn-primary btn-block" @onclick="LoginAsync" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span>Вход...</span>
+                }
+                else
+                {
+                    <span>Войти</span>
+                }
+            </button>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <a href="/" class="link">← Вернуться на главную</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private string _errorMessage = string.Empty;
+    private bool _isLoading;
+
+    private async Task LoginAsync()
+    {
+        _isLoading = true;
+        _errorMessage = string.Empty;
+        StateHasChanged();
+
+        var success = await AuthService.LoginAsync(_username, _password);
+
+        if (success)
+        {
+            Navigation.NavigateTo("/admin", true);
+        }
+        else
+        {
+            _errorMessage = "Неверный логин или пароль";
+        }
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoginAsync();
+        }
+    }
+}
+
+
