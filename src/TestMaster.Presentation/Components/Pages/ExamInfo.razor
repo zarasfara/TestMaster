@@ -1,105 +1,114 @@
 ﻿@page "/exam/info"
-@layout MainLayout
-@using KEGE_Emulator.Services
-@implements IDisposable
-@inject ExamTimerService TimerService
-@inject NavigationManager NavigationManager
+@layout ExamLayout
 
-<div class="header-bar">
-    <div class="header-title">КИМ № 25107025  БР № 2832503195017</div>
-    <div class="header-actions">
-        <div style="margin-right: 20px; font-weight: bold;">@TimeDisplay</div>
-        <button class="btn btn-danger" @onclick="ConfirmFinish">Завершить экзамен досрочно</button>
-        <button class="btn" title="Помощь">?</button>
-    </div>
+<div class="task-header">
+    <h1>Информация об экзамене</h1>
 </div>
 
-<div style="display: flex; height: calc(100vh - 50px);">
-    <!-- Левая панель -->
-    <div class="sidebar">
-        <div class="sidebar-counter">0/27</div>
-
-        <div class="nav-btn active" title="Вверх">↑</div>
-        <div class="nav-btn active" title="Инфо">i</div>
-
-        <div class="question-list">
-            @for (int i = 1; i <= 27; i++)
-            {
-                var taskId = i;
-                <div class="q-btn" @onclick="() => NavigateTo(taskId)">
-                    @i
-                </div>
-            }
-        </div>
-
-        <div class="nav-btn" title="Назад">←</div>
-        <div class="nav-btn" title="Вперёд">→</div>
-        <div class="nav-btn" title="Вниз">↓</div>
+<div class="task-body exam-info-container">
+    <div class="exam-info-card">
+        <h2>Единый государственный экзамен по информатике и ИКТ</h2>
+        <p>Это аттестационное испытание, проверяющее знания и навыки в области информатики и информационных технологий.</p>
     </div>
 
-    <!-- Основной контент -->
-    <div class="main-content">
-        <div class="task-header">
-            Информация об экзамене
+    <div class="exam-info-card">
+        <h2>Структура экзамена</h2>
+        <div class="info-section">
+            <div class="info-section-title">Количество заданий</div>
+            <p>Экзаменационная работа состоит из <strong>27 заданий</strong> разного уровня сложности.</p>
         </div>
+        <div class="info-section">
+            <div class="info-section-title">Время выполнения</div>
+            <p>На выполнение всей работы отводится <strong>235 минут</strong> (3 часа 55 минут).</p>
+        </div>
+    </div>
 
-        <div class="task-body">
-            <p><strong>Единый государственный экзамен по информатике и ИКТ</strong></p>
-            <p>Экзаменационная работа состоит из 27 заданий.</p>
-            <p>На выполнение работы отводится 235 минут.</p>
-            <p>Ответы на задания 1–23 записываются в виде числа или последовательности символов.</p>
-            <p>Задания 24–27 требуют написания программы или обработки файла.</p>
-            <p>Будьте внимательны при вводе ответов!</p>
+    <div class="exam-info-card">
+        <h2>Форматы ответов</h2>
+        <ul class="info-list">
+            <li><strong>Задания 1–23:</strong> Ответы записываются в виде числа или последовательности символов</li>
+            <li><strong>Задания 24–27:</strong> Требуют написания программы или обработки файла</li>
+        </ul>
+    </div>
+
+    <div class="exam-info-card">
+        <h2>Важные рекомендации</h2>
+        <div class="exam-info-highlight">
+            <p>⚠️ Будьте внимательны при вводе ответов! Опечатки могут привести к неправильному результату.</p>
+        </div>
+        <ul class="info-list">
+            <li>Внимательно читайте условие каждого задания</li>
+            <li>Проверяйте введённые ответы перед сохранением</li>
+            <li>Помните о формате ответа для каждого задания</li>
+            <li>Используйте функцию "Сохранить ответ" для фиксации вашего решения</li>
+        </ul>
+    </div>
+
+    <div class="exam-info-card">
+        <h2>Навигация</h2>
+        <ul class="info-list">
+            <li>Используйте номера заданий в левой панели для быстрого перемещения</li>
+            <li>Нажимайте кнопки ↑ и ↓ для навигации по группам заданий</li>
+            <li>Ваши ответы автоматически отмечаются в списке заданий</li>
+            <li>Кнопка "ℹ" в заголовке всегда откроет эту страницу</li>
+        </ul>
+    </div>
+    
+    <div class="exam-info-card">
+        <h2>Файлы заданий</h2>
+        <p>Ниже вы можете скачать все файлы, приложенные к заданиям экзамена.</p>
+        <div style="text-align: center; margin-top: 15px;">
+            <button class="btn btn-primary" @onclick="DownloadAllFiles">Скачать все файлы</button>
         </div>
     </div>
 </div>
 
 @code {
-    private void NavigateTo(int id)
-    {
-        NavigationManager.NavigateTo($"/exam/{id}");
-    }
+    [Inject] IJSRuntime JSRuntime { get; set; }
 
-    private void ConfirmFinish()
-    {
-        NavigationManager.NavigateTo("/results");
-    }
+    private bool _jsInjected = false;
 
-    private string TimeDisplay => FormatTime(TimerService.RemainingSeconds);
-
-    protected override void OnInitialized()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!TimerService.IsRunning)
+        if (firstRender && !(_jsInjected))
         {
-            TimerService.Start();
+            await JSRuntime.InvokeVoidAsync("eval", @"
+            window.downloadAllFiles = function() {
+                const files = [
+                    '/files/3.ods',
+                    '/files/9.ods',
+                    '/files/10.odt',
+                    '/files/17.txt',
+                    '/files/18.ods',
+                    '/files/22.ods',
+                    '/files/24.txt',
+                    '/files/26.txt',
+                    '/files/27_A.txt',
+                    '/files/27_B.txt'
+                ];
+                files.forEach(url => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = url.split('/').pop();
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+            };
+        ");
+            _jsInjected = true;
         }
-
-        TimerService.OnTick += OnTimerTick;
-        TimerService.OnTimeExpired += OnTimeExpired;
     }
-
-    private void OnTimerTick(int seconds)
+    
+    private async Task DownloadAllFiles()
     {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void OnTimeExpired()
-    {
-        InvokeAsync(() =>
+        try
         {
-            NavigationManager.NavigateTo("/results", forceLoad: true);
-        });
-    }
-
-    public void Dispose()
-    {
-        TimerService.OnTick -= OnTimerTick;
-        TimerService.OnTimeExpired -= OnTimeExpired;
-    }
-
-    private string FormatTime(int totalSeconds)
-    {
-        var ts = TimeSpan.FromSeconds(totalSeconds);
-        return $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+            await JSRuntime.InvokeVoidAsync("downloadAllFiles");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Не удалось скачать файлы. Попробуйте скачать вручную.");
+        }
     }
 }

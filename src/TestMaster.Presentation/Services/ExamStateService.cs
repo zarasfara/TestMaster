@@ -1,9 +1,6 @@
-﻿// Services/ExamStateService.cs
-using System.Collections.Generic;
+﻿namespace TestMaster.Presentation.Services;
 
-namespace KEGE_Emulator.Services;
-
-public class ExamStateService
+public class ExamStateService : IExamStateService
 {
     public Dictionary<int, string> Answers { get; } = new();
     public int TotalQuestions => 27;

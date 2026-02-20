@@ -309,3 +309,146 @@ body {
     border-color: var(--btn-primary);
     color: white;
 }
+
+/* === Стили под kompege.ru — многоячеечные ответы === */
+
+.multi-answer-container {
+    margin-top: 20px;
+}
+
+.kege-table {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background-color: #1e2329;
+    border: 1px solid #444;
+    border-radius: 0 0 4px 4px;
+    overflow: hidden;
+}
+
+.kege-table th,
+.kege-table td {
+    padding: 10px 8px;
+    border: 1px solid #444;
+    text-align: center;
+}
+
+.kege-table th {
+    background-color: #2a2f3a;
+    color: #28a745;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.kege-table td {
+    background-color: #222831;
+}
+
+.kege-cell {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #444;
+    background-color: #2a2f3a;
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.kege-cell:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+}
+
+.answer-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.btn-outline {
+    background-color: red;
+    border: 1px solid red;
+    color: #fff;
+    padding: 8px 20px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-outline:hover {
+    background-color: red;
+    color: #fff;
+}
+
+.btn-primary {
+    background-color: #28a745;
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #218838;
+}
+
+/* === Нумерация строк === */
+.row-number {
+    width: 30px;
+    background-color: #2a2f3a;
+    color: #28a745;
+    font-weight: bold;
+    text-align: center;
+    border-right: 1px solid #444;
+    padding: 10px 6px;
+}
+
+/* === Обёртка таблицы — чтобы заголовок был только над таблицей === */
+.kege-table-wrapper {
+    display: inline-block;
+    margin-top: 20px;
+}
+
+.table-header {
+    background-color: #1e2329;
+    color: #aaa;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 4px 4px 0 0;
+    text-align: center;
+    border: 1px solid #444;
+    border-bottom: none;
+    /* Убираем width: fit-content — теперь работает через inline-block */
+}
+
+.file-links {
+    margin: 15px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.file-link {
+    color: #28a745;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #2a2f3a;
+}
+
+.file-link:hover {
+    background-color: #333;
+}
