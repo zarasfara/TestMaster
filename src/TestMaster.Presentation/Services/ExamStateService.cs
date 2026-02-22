@@ -1,4 +1,4 @@
-﻿﻿namespace TestMaster.Presentation.Services;
+﻿namespace TestMaster.Presentation.Services;
 
 public class ExamStateService : IExamStateService
 {
