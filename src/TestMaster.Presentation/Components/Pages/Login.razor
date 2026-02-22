@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject IExamStateService ExamState
 @inject IExamResultService ExamResultService
+@inject IFilePickerService FilePickerService
 
 <div class="login-container"
      style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: calc(100vh - 50px); padding: 20px;">
@@ -13,6 +14,15 @@
 
     <div style="background: #2d2d3d; padding: 25px; border-radius: 8px; width: 100%; max-width: 600px;">
         <p style="margin-bottom: 20px; color: #aaa;">Введите номер вашего бланка регистрации</p>
+
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 16px;">
+            <button class="btn btn-secondary" @onclick="PickExcelFileAsync" disabled="@_isLoading">
+                Выбрать Excel-файл
+            </button>
+            <span style="color: #aaa; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                @(_selectedExcelFilePath ?? "Файл не выбран")
+            </span>
+        </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <input @ref="_inputPart1"
@@ -52,7 +62,7 @@
         </p>
 
         <div style="display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" @onclick="GoToExamAsync" disabled="@(!IsFormValid() || _isLoading)">
+            <button class="btn btn-primary" @onclick="GoToExamAsync" disabled="@(!IsFormValid() || _isLoading || string.IsNullOrWhiteSpace(_selectedExcelFilePath))">
                 @_continueText
             </button>
         </div>
@@ -80,6 +90,7 @@
     private string _errorMessage = string.Empty;
     private bool _isLoading;
     private string _continueText = "Далее";
+    private string? _selectedExcelFilePath;
 
     private ElementReference _inputPart1;
     private ElementReference _inputPart2;
@@ -117,6 +128,20 @@
                _part3.Length == 6;
     }
 
+    private async Task PickExcelFileAsync()
+    {
+        _errorMessage = string.Empty;
+        var selectedPath = await FilePickerService.PickExcelFileAsync();
+
+        if (string.IsNullOrWhiteSpace(selectedPath))
+        {
+            _errorMessage = "Excel-файл не выбран";
+            return;
+        }
+
+        _selectedExcelFilePath = selectedPath;
+    }
+
     private async Task GoToExamAsync()
     {
         if (!IsFormValid())
@@ -129,8 +154,17 @@
         _continueText = "Проверка...";
         StateHasChanged();
 
+        if (string.IsNullOrWhiteSpace(_selectedExcelFilePath))
+        {
+            _errorMessage = "Выберите Excel-файл с кодами учеников";
+            _isLoading = false;
+            _continueText = "Далее";
+            StateHasChanged();
+            return;
+        }
+
         var blankNumber = $"{_part1}{_part2}{_part3}";
-        var lookup = await ExamResultService.TryLoadStudentAsync(blankNumber);
+        var lookup = await ExamResultService.TryLoadStudentAsync(blankNumber, _selectedExcelFilePath);
 
         if (!lookup.Success || lookup.Student == null)
         {

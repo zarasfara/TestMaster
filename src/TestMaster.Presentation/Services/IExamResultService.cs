@@ -2,7 +2,7 @@
 
 public interface IExamResultService
 {
-    Task<LookupResult> TryLoadStudentAsync(string blankNumberInput);
+    Task<LookupResult> TryLoadStudentAsync(string blankNumberInput, string excelFilePath);
     Task<SaveResult> SaveResultsAsync(StudentInfo student, Dictionary<int, string> answers);
 }
 
