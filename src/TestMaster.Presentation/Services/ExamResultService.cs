@@ -9,9 +9,10 @@ namespace TestMaster.Presentation.Services;
 
 public class ExamResultService : IExamResultService
 {
+    private const string InputFileName = "input.xlsx";
     private const string ResultsFolderName = "results";
 
-    public async Task<LookupResult> TryLoadStudentAsync(string blankNumberInput, string excelFilePath)
+    public async Task<LookupResult> TryLoadStudentAsync(string blankNumberInput)
     {
         var normalizedBlank = NormalizeBlankNumber(blankNumberInput);
         if (string.IsNullOrWhiteSpace(normalizedBlank))
@@ -19,15 +20,10 @@ public class ExamResultService : IExamResultService
             return new LookupResult(false, "Номер бланка не указан", null);
         }
 
-        if (string.IsNullOrWhiteSpace(excelFilePath))
-        {
-            return new LookupResult(false, "Не выбран файл с кодами учеников", null);
-        }
-
-        var inputPath = excelFilePath.Trim();
+        var inputPath = Path.Combine(AppContext.BaseDirectory, InputFileName);
         if (!File.Exists(inputPath))
         {
-            return new LookupResult(false, "Выбранный Excel-файл не найден", null);
+            return new LookupResult(false, "Файл input.xlsx не найден", null);
         }
 
         try
@@ -39,47 +35,49 @@ public class ExamResultService : IExamResultService
                 return new LookupResult(false, "Не удалось открыть input.xlsx", null);
             }
 
-            var worksheetParts = workbookPart.WorksheetParts.ToList();
-            if (worksheetParts.Count == 0)
+            var worksheetPart = workbookPart.WorksheetParts.FirstOrDefault();
+            if (worksheetPart == null)
             {
                 return new LookupResult(false, "Не найден лист в input.xlsx", null);
             }
 
-            foreach (var worksheetPart in worksheetParts)
+            var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
+            if (sheetData == null)
             {
-                var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
-                if (sheetData == null)
+                return new LookupResult(false, "Не найдены данные в input.xlsx", null);
+            }
+
+            var rows = sheetData.Elements<Row>().ToList();
+            if (rows.Count < 2)
+            {
+                return new LookupResult(false, "input.xlsx не содержит данных", null);
+            }
+
+            foreach (var row in rows.Skip(1))
+            {
+                var blankCell = GetCellByColumn(row, "A");
+                var fioCell = GetCellByColumn(row, "B");
+                var schoolCell = GetCellByColumn(row, "C");
+
+                var blankValue = NormalizeBlankNumber(GetCellValue(workbookPart, blankCell));
+                if (blankValue != normalizedBlank)
                 {
                     continue;
                 }
 
-                var rows = sheetData.Elements<Row>();
-                foreach (var row in rows)
-                {
-                    var blankCell = GetCellByColumn(row, "A");
-                    var fioCell = GetCellByColumn(row, "B");
-                    var schoolCell = GetCellByColumn(row, "C");
+                var fioValue = (GetCellValue(workbookPart, fioCell) ?? string.Empty).Trim();
+                var schoolValue = (GetCellValue(workbookPart, schoolCell) ?? string.Empty).Trim();
 
-                    var blankValue = NormalizeBlankNumber(GetCellValue(workbookPart, blankCell));
-                    if (blankValue != normalizedBlank)
-                    {
-                        continue;
-                    }
+                var (lastName, firstName, middleName) = ParseFullName(fioValue);
 
-                    var fioValue = (GetCellValue(workbookPart, fioCell) ?? string.Empty).Trim();
-                    var schoolValue = (GetCellValue(workbookPart, schoolCell) ?? string.Empty).Trim();
+                var student = new StudentInfo(
+                    normalizedBlank,
+                    lastName,
+                    firstName,
+                    middleName,
+                    schoolValue);
 
-                    var (lastName, firstName, middleName) = ParseFullName(fioValue);
-
-                    var student = new StudentInfo(
-                        normalizedBlank,
-                        lastName,
-                        firstName,
-                        middleName,
-                        schoolValue);
-
-                    return new LookupResult(true, null, student);
-                }
+                return new LookupResult(true, null, student);
             }
 
             return new LookupResult(false, "Номер бланка не найден", null);
@@ -252,18 +250,7 @@ public class ExamResultService : IExamResultService
     private static Cell? GetCellByColumn(Row row, string columnName)
     {
         return row.Elements<Cell>()
-            .FirstOrDefault(c => string.Equals(GetColumnFromReference(c.CellReference?.Value), columnName, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static string? GetColumnFromReference(string? cellReference)
-    {
-        if (string.IsNullOrWhiteSpace(cellReference))
-        {
-            return null;
-        }
-
-        var letters = new string(cellReference.TakeWhile(char.IsLetter).ToArray());
-        return string.IsNullOrWhiteSpace(letters) ? null : letters;
+            .FirstOrDefault(c => c.CellReference?.Value?.StartsWith(columnName, StringComparison.OrdinalIgnoreCase) == true);
     }
 
     private static string? GetCellValue(WorkbookPart workbookPart, Cell? cell)
