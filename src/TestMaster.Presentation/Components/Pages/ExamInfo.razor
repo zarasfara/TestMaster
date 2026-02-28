@@ -1,4 +1,5 @@
 ﻿@page "/exam/info"
+@using TestMaster.Presentation.Services
 @layout ExamLayout
 
 <div class="task-header">
@@ -7,108 +8,115 @@
 
 <div class="task-body exam-info-container">
     <div class="exam-info-card">
-        <h2>Единый государственный экзамен по информатике и ИКТ</h2>
-        <p>Это аттестационное испытание, проверяющее знания и навыки в области информатики и информационных технологий.</p>
-    </div>
-
-    <div class="exam-info-card">
-        <h2>Структура экзамена</h2>
-        <div class="info-section">
-            <div class="info-section-title">Количество заданий</div>
-            <p>Экзаменационная работа состоит из <strong>27 заданий</strong> разного уровня сложности.</p>
+        <h2>ЕГЭ по информатике и ИКТ</h2>
+        
+        <div>
+            <p><strong>27 заданий</strong> • <strong>235 минут</strong> (3 часа 55 минут)</p>
+            <p><strong>Задания 1–23:</strong> Ответы в виде числа или символов</p>
+            <p><strong>Задания 24–27:</strong> Написание программы или обработка файла</p>
         </div>
-        <div class="info-section">
-            <div class="info-section-title">Время выполнения</div>
-            <p>На выполнение всей работы отводится <strong>235 минут</strong> (3 часа 55 минут).</p>
+        
+        <div class="exam-info-highlight" style="margin: 20px 0;">
+            <p>⚠️ Внимательно проверяйте ответы перед сохранением! Используйте номера заданий в левой панели для навигации.</p>
         </div>
-    </div>
-
-    <div class="exam-info-card">
-        <h2>Форматы ответов</h2>
-        <ul class="info-list">
-            <li><strong>Задания 1–23:</strong> Ответы записываются в виде числа или последовательности символов</li>
-            <li><strong>Задания 24–27:</strong> Требуют написания программы или обработки файла</li>
-        </ul>
-    </div>
-
-    <div class="exam-info-card">
-        <h2>Важные рекомендации</h2>
-        <div class="exam-info-highlight">
-            <p>⚠️ Будьте внимательны при вводе ответов! Опечатки могут привести к неправильному результату.</p>
-        </div>
-        <ul class="info-list">
-            <li>Внимательно читайте условие каждого задания</li>
-            <li>Проверяйте введённые ответы перед сохранением</li>
-            <li>Помните о формате ответа для каждого задания</li>
-            <li>Используйте функцию "Сохранить ответ" для фиксации вашего решения</li>
-        </ul>
-    </div>
-
-    <div class="exam-info-card">
-        <h2>Навигация</h2>
-        <ul class="info-list">
-            <li>Используйте номера заданий в левой панели для быстрого перемещения</li>
-            <li>Нажимайте кнопки ↑ и ↓ для навигации по группам заданий</li>
-            <li>Ваши ответы автоматически отмечаются в списке заданий</li>
-            <li>Кнопка "ℹ" в заголовке всегда откроет эту страницу</li>
-        </ul>
-    </div>
-    
-    <div class="exam-info-card">
-        <h2>Файлы заданий</h2>
-        <p>Ниже вы можете скачать все файлы, приложенные к заданиям экзамена.</p>
-        <div style="text-align: center; margin-top: 15px;">
-            <button class="btn btn-primary" @onclick="DownloadAllFiles">Скачать все файлы</button>
+        
+        <div style="margin-top: 25px;">
+            <h3 style="margin-bottom: 15px; text-align: center; color: #fff;">Скачать файлы заданий</h3>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" @onclick="DownloadAllFiles" disabled="@_isDownloading">
+                    @if (_isDownloading)
+                    {
+                        <span>Скачивание...</span>
+                    }
+                    else
+                    {
+                        <span>Скачать в Downloads</span>
+                    }
+                </button>
+                <button class="btn btn-success" @onclick="DownloadAllFilesWithPicker" disabled="@_isDownloading">
+                    @if (_isDownloading)
+                    {
+                        <span>Скачивание...</span>
+                    }
+                    else
+                    {
+                        <span>📁 Выбрать папку</span>
+                    }
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(_downloadMessage))
+            {
+                <div style="margin-top: 10px; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 5px; color: #155724; font-size: 14px; text-align: center;">
+                    <strong>✓</strong> @_downloadMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div style="margin-top: 10px; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24; font-size: 14px; text-align: center;">
+                    <strong>✗</strong> @_errorMessage
+                </div>
+            }
         </div>
     </div>
 </div>
 
 @code {
-    [Inject] IJSRuntime JSRuntime { get; set; }
+    [Inject] private IFileDownloadService FileDownloadService { get; set; } = null!;
 
-    private bool _jsInjected = false;
+    private bool _isDownloading;
+    private string _downloadMessage = string.Empty;
+    private string _errorMessage = string.Empty;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && !(_jsInjected))
-        {
-            await JSRuntime.InvokeVoidAsync("eval", @"
-            window.downloadAllFiles = function() {
-                const files = [
-                    '/files/3.ods',
-                    '/files/9.ods',
-                    '/files/10.odt',
-                    '/files/17.txt',
-                    '/files/18.ods',
-                    '/files/22.ods',
-                    '/files/24.txt',
-                    '/files/26.txt',
-                    '/files/27_A.txt',
-                    '/files/27_B.txt'
-                ];
-                files.forEach(url => {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = url.split('/').pop();
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                });
-            };
-        ");
-            _jsInjected = true;
-        }
-    }
-    
     private async Task DownloadAllFiles()
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("downloadAllFiles");
+            _isDownloading = true;
+            _downloadMessage = string.Empty;
+            _errorMessage = string.Empty;
+            StateHasChanged();
+
+            var downloadsPath = await FileDownloadService.DownloadAllExamFilesAsync();
+            
+            _downloadMessage = $"Файлы успешно скачаны в папку: {downloadsPath}";
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Не удалось скачать файлы. Попробуйте скачать вручную.");
+            _errorMessage = $"Ошибка при скачивании файлов: {ex.Message}";
+            Console.WriteLine($"Ошибка при скачивании файлов: {ex.Message}");
+        }
+        finally
+        {
+            _isDownloading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DownloadAllFilesWithPicker()
+    {
+        try
+        {
+            _isDownloading = true;
+            _downloadMessage = string.Empty;
+            _errorMessage = string.Empty;
+            StateHasChanged();
+
+            var downloadsPath = await FileDownloadService.DownloadAllExamFilesWithPickerAsync();
+            
+            if (downloadsPath != null)
+            {
+                _downloadMessage = $"Файлы успешно скачаны в папку: {downloadsPath}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Ошибка при скачивании файлов: {ex.Message}";
+            Console.WriteLine($"Ошибка при скачивании файлов: {ex.Message}");
+        }
+        finally
+        {
+            _isDownloading = false;
+            StateHasChanged();
         }
     }
 }

@@ -1,14 +1,34 @@
-﻿namespace TestMaster.Presentation;
+﻿using TestMaster.Presentation.Services;
 
-public partial class App : Application
+namespace TestMaster.Presentation;
+
+public partial class App
 {
-	public App()
-	{
-		InitializeComponent();
-	}
+    public App()
+    {
+        InitializeComponent();
+        EnsureInputFileExists();
+    }
 
-	protected override Window CreateWindow(IActivationState? activationState)
-	{
-		return new Window(new MainPage()) { Title = "TestMaster.Presentation" };
-	}
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        return new Window(new MainPage()) { Title = "TestMaster.Presentation" };
+    }
+
+    private static void EnsureInputFileExists()
+    {
+        try
+        {
+            var inputPath = Path.Combine(AppContext.BaseDirectory, "input.xlsx");
+            if (!File.Exists(inputPath))
+            {
+                InputFileGenerator.GenerateSampleInputFile(inputPath);
+                Console.WriteLine($"Создан тестовый файл: {inputPath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка создания input.xlsx: {ex.Message}");
+        }
+    }
 }

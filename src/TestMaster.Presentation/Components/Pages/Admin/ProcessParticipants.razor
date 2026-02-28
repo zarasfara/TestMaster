@@ -1,0 +1,73 @@
+﻿@page "/admin"
+@page "/admin/process-participants"
+@layout AdminLayout
+
+<div class="admin-page">
+    <div class="page-header">
+        <h1>Файл участников</h1>
+        <p class="page-description">Система использует готовый ID из файла input.xlsx рядом с приложением</p>
+    </div>
+
+    <div class="content-card">
+        <div class="form-section">
+            <h3>Требуемый формат</h3>
+
+            <div class="file-info">
+                <h4>📋 Требуемый формат файла:</h4>
+                <div class="format-example">
+                    <p><strong>Столбец A (ID):</strong> используется для входа школьника</p>
+                    <p><strong>Столбец D (Предмет):</strong> должно быть значение <strong>Информатика</strong></p>
+                    <p><strong>Столбец E (ФИО):</strong> данные участника</p>
+                    <p><strong>Столбец F (Школа):</strong> образовательная организация</p>
+                </div>
+                <p style="margin-top: 10px; color: #999;">Пример:</p>
+                <div class="example-table">
+                    <div class="table-row header-row">
+                        <div class="table-cell">ID</div>
+                        <div class="table-cell">Время согласия</div>
+                        <div class="table-cell">Предмет</div>
+                        <div class="table-cell">ФИО</div>
+                        <div class="table-cell">Школа</div>
+                        <div class="table-cell">Класс</div>
+                        <div class="table-cell">Телефон</div>
+                        <div class="table-cell">Почта</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="table-cell">100001</div>
+                        <div class="table-cell">10:25</div>
+                        <div class="table-cell">Информатика</div>
+                        <div class="table-cell">Иван Иванович Иванов</div>
+                        <div class="table-cell">МКОУ СОШ №27</div>
+                        <div class="table-cell">11А</div>
+                        <div class="table-cell">+7 900 000-00-01</div>
+                        <div class="table-cell">ivanov@example.com</div>
+                    </div>
+                    <div class="table-row">
+                        <div class="table-cell">100002</div>
+                        <div class="table-cell">10:32</div>
+                        <div class="table-cell">Информатика</div>
+                        <div class="table-cell">Петр Петрович Петров</div>
+                        <div class="table-cell">Гимназия №47</div>
+                        <div class="table-cell">11Б</div>
+                        <div class="table-cell">+7 900 000-00-02</div>
+                        <div class="table-cell">petrov@example.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>Информация</h3>
+            <ul class="info-list">
+                <li><strong>Расположение файла:</strong> рядом с exe, имя <strong>input.xlsx</strong></li>
+                <li><strong>Проверка на логине:</strong> только по столбцу <strong>ID</strong> (A)</li>
+                <li><strong>Доп. условие допуска:</strong> в столбце <strong>D</strong> предмет должен быть <strong>Информатика</strong></li>
+                <li><strong>Используемые поля:</strong> ID, Предмет, ФИО, Школа</li>
+                <li><strong>Автогенерация кодов:</strong> отключена</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+

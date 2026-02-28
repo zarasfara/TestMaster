@@ -1,0 +1,90 @@
+﻿@using TestMaster.Presentation.Services
+@implements IDisposable
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+@if (!AuthService.IsAuthenticated)
+{
+    <div>Загрузка...</div>
+    return;
+}
+
+<div class="admin-layout">
+    <div class="admin-sidebar">
+        <div class="admin-header">
+            <h2>Админ панель</h2>
+        </div>
+
+        <nav class="admin-nav">
+            <a href="/admin/process-participants" class="nav-item @(IsActive("/admin/process-participants"))">
+                <span class="nav-icon">👥</span>
+                <span>Обработка участников</span>
+            </a>
+        </nav>
+
+        <div class="admin-footer">
+            <button class="btn btn-danger btn-block" @onclick="Logout">
+                Выйти
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-content">
+        @Body
+    </div>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Body { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/admin/login", true);
+            return;
+        }
+
+        AuthService.OnAuthStateChanged += OnAuthStateChanged;
+    }
+
+    private void OnAuthStateChanged()
+    {
+        if (!AuthService.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/admin/login", true);
+        }
+        else
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        Navigation.NavigateTo("/admin/login", true);
+    }
+
+    private string IsActive(string href)
+    {
+        var currentPath = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
+        // Если это корневая admin, показываем как активную для process-participants
+        if (href == "/admin/process-participants" && (currentPath == "/admin" || currentPath == "/admin/"))
+        {
+            return "active";
+        }
+
+        return currentPath == href ? "active" : "";
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= OnAuthStateChanged;
+    }
+
+}
+
+
+
+

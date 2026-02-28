@@ -1,18 +1,20 @@
 ﻿namespace TestMaster.Presentation.Services;
 
 /// <summary>
-/// Интерфейс для управления состоянием экзамена
+///     Интерфейс для управления состоянием экзамена
 /// </summary>
 public interface IExamStateService
 {
     /// <summary>
-    /// Словарь ответов на вопросы (ключ - номер вопроса, значение - ответ)
+    ///     Словарь ответов на вопросы (ключ - номер вопроса, значение - ответ)
     /// </summary>
     Dictionary<int, string> Answers { get; }
 
     /// <summary>
-    /// Общее количество вопросов в экзамене
+    ///     Общее количество вопросов в экзамене
     /// </summary>
     int TotalQuestions { get; }
-}
 
+    string? BlankNumber { get; set; }
+    StudentInfo? Student { get; set; }
+}
