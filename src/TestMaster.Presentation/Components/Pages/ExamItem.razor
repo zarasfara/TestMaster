@@ -71,7 +71,6 @@
                         <tr>
                             <th></th>
                             <th>1</th>
-                            <th>2</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,8 +79,7 @@
                             var index = i;
                             <tr>
                                 <td class="row-number">@(index + 1)</td>
-                                <td><input type="text" @bind-value="_multiAnswer[index * 2]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
-                                <td><input type="text" @bind-value="_multiAnswer[index * 2 + 1]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
+                                <td><input type="text" @bind-value="_multiAnswer[index]" @oninput="OnMultiAnswerChanged" class="kege-cell" /></td>
                             </tr>
                         }
                     </tbody>
@@ -241,7 +239,7 @@ else
     {
         var count = Id switch
         {
-            25 => 20,
+            25 => 10,
             27 => 4,
             _ => 2
         };
@@ -271,7 +269,7 @@ else
     {
         var count = Id switch
         {
-            25 => 20,
+            25 => 10,
             27 => 4,
             _ => 2
         };
