@@ -26,6 +26,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<IFilePickerService, FilePickerService>();
         builder.Services.AddSingleton<IExamResultService, ExamResultService>();
+        builder.Services.AddSingleton<IExamDataService, ExamDataService>();
 
         return builder.Build();
     }
