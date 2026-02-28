@@ -7,6 +7,7 @@
 @using TestMaster.Presentation.Services
 @layout AdminLayout
 @inject IFilePickerService FilePicker
+@inject IExamDataService ExamData
 
 <div class="admin-page">
     <div class="page-header">
@@ -72,7 +73,7 @@
                             <th>ФИО</th>
                             <th>Школа</th>
                             <th>Итоговые баллы</th>
-                            @for (var taskId = 1; taskId <= 27; taskId++)
+                            @for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
                             {
                                 <th>@taskId</th>
                             }
@@ -112,48 +113,6 @@
 
 @code {
     private const int MaxJsonFiles = 200;
-    private const int TaskCount = 27;
-
-    private readonly Dictionary<int, string> _correctAnswers = new()
-    {
-        { 1, "52" },
-        { 2, "zyxw" },
-        { 3, "133228" },
-        { 4, "16" },
-        { 5, "26" },
-        { 6, "251" },
-        { 7, "123937" },
-        { 8, "5058" },
-        { 9, "901" },
-        { 10, "13" },
-        { 11, "257" },
-        { 12, "999" },
-        { 13, "191191255254" },
-        { 14, "3367" },
-        { 15, "24" },
-        { 16, "15588" },
-        { 17, "150,9930" },
-        { 18, "2362,1205" },
-        { 19, "124" },
-        { 20, "127,128" },
-        { 21, "132" },
-        { 22, "12" },
-        { 23, "68" },
-        { 24, "2981" },
-        { 25, "800004,400004,800009,114294,800013,266674,800024,400014,800033,61554" },
-        { 26, "564,444" },
-        { 27, "38471,61225,142058,25299" }
-    };
-
-    private readonly Dictionary<int, int> _maxPoints = new()
-    {
-        { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 },
-        { 6, 1 }, { 7, 1 }, { 8, 1 }, { 9, 1 }, { 10, 1 },
-        { 11, 1 }, { 12, 1 }, { 13, 1 }, { 14, 1 }, { 15, 1 },
-        { 16, 1 }, { 17, 1 }, { 18, 1 }, { 19, 1 }, { 20, 1 },
-        { 21, 1 }, { 22, 1 }, { 23, 1 }, { 24, 1 }, { 25, 1 },
-        { 26, 2 }, { 27, 2 }
-    };
 
     private bool _isLoading;
     private bool _isExporting;
@@ -242,14 +201,14 @@
         var fullName = BuildFullName(lastName, firstName, middleName);
 
         var answers = ParseAnswers(root);
-        var correctByTask = new List<bool>(TaskCount);
+        var correctByTask = new List<bool>(ExamData.TotalTasks);
         var totalScore = 0;
 
-        for (var taskId = 1; taskId <= TaskCount; taskId++)
+        for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
         {
             var userAnswer = answers.GetValueOrDefault(taskId, string.Empty);
-            var score = CalculateTaskScore(taskId, userAnswer);
-            var maxScore = _maxPoints.GetValueOrDefault(taskId, 0);
+            var (score, _) = ExamData.CalculateTaskScore(taskId, userAnswer);
+            var maxScore = ExamData.MaxPoints.GetValueOrDefault(taskId, 0);
 
             totalScore += score;
             correctByTask.Add(score == maxScore && maxScore > 0);
@@ -319,42 +278,6 @@
         return element.ToString();
     }
 
-    private int CalculateTaskScore(int taskId, string userAnswer)
-    {
-        var correct = _correctAnswers.GetValueOrDefault(taskId, "—");
-        var maxPoint = _maxPoints.GetValueOrDefault(taskId, 0);
-
-        if (string.IsNullOrWhiteSpace(userAnswer))
-        {
-            return 0;
-        }
-
-        if (userAnswer.Equals(correct, StringComparison.OrdinalIgnoreCase))
-        {
-            return maxPoint;
-        }
-
-        if (taskId is 17 or 18 or 20 or 26 or 27)
-        {
-            var userParts = userAnswer.Split(',');
-            var correctParts = correct.Split(',');
-            if (userParts.Length == correctParts.Length)
-            {
-                var correctCount = 0;
-                for (var i = 0; i < userParts.Length; i++)
-                {
-                    if (userParts[i].Trim().Equals(correctParts[i].Trim(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        correctCount++;
-                    }
-                }
-
-                return correctCount;
-            }
-        }
-
-        return 0;
-    }
 
     private static string GetStringProperty(JsonElement root, string propertyName)
     {
@@ -540,7 +463,7 @@
         };
     }
 
-    private static List<string> BuildHeaders()
+    private List<string> BuildHeaders()
     {
         var headers = new List<string>
         {
@@ -550,7 +473,7 @@
             "Итоговые баллы"
         };
 
-        for (var taskId = 1; taskId <= TaskCount; taskId++)
+        for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
         {
             headers.Add(taskId.ToString());
         }
