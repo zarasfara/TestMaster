@@ -31,7 +31,7 @@ public class ExamResultService : IExamResultService
             return Task.FromResult(FailedLookup(ErrorIdMissing));
         }
 
-        var inputPath = Path.Combine(AppContext.BaseDirectory, InputFileName);
+        var inputPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", InputFileName);
         if (!File.Exists(inputPath))
         {
             return Task.FromResult(FailedLookup(ErrorInputMissing));
