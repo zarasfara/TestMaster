@@ -400,6 +400,9 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
+# Generated MSIX signing certificate (created by scripts/Build-Msix.ps1)
+scripts/*.cer
+
 # JetBrains Rider
 *.sln.iml
 .idea
