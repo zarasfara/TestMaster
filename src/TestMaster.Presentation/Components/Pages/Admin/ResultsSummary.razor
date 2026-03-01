@@ -1,0 +1,496 @@
+@page "/admin/results-summary"
+@using System.Text
+@using System.Text.Json
+@using DocumentFormat.OpenXml
+@using DocumentFormat.OpenXml.Packaging
+@using DocumentFormat.OpenXml.Spreadsheet
+@using TestMaster.Presentation.Services
+@layout AdminLayout
+@inject IFilePickerService FilePicker
+@inject IExamDataService ExamData
+
+<div class="admin-page">
+    <div class="page-header">
+        <h1>Сводная таблица результатов</h1>
+        <p class="page-description">Загрузите JSON-файлы результатов (до 200 файлов)</p>
+    </div>
+
+    <div class="content-card">
+        <div class="form-section">
+            <h3>Загрузка результатов</h3>
+
+            <div style="margin: 20px 0;">
+                <button class="btn btn-primary btn-large" @onclick="SelectJsonFilesAsync" disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <span>Загрузка...</span>
+                    }
+                    else
+                    {
+                        <span>📁 Выбрать JSON-файлы</span>
+                    }
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_message))
+            {
+                <div class="alert @(_isError ? "alert-error" : "alert-success")">
+                    @_message
+                </div>
+            }
+
+            @if (_rows.Count > 0)
+            {
+                <div class="export-actions">
+                    <button class="btn btn-success" @onclick="ExportCsvAsync" disabled="@_isExporting">
+                        @if (_isExporting)
+                        {
+                            <span>Экспорт...</span>
+                        }
+                        else
+                        {
+                            <span>⬇️ Экспорт в CSV</span>
+                        }
+                    </button>
+
+                    <button class="btn btn-primary" @onclick="ExportXlsxAsync" disabled="@_isExporting">
+                        @if (_isExporting)
+                        {
+                            <span>Экспорт...</span>
+                        }
+                        else
+                        {
+                            <span>⬇️ Экспорт в XLSX</span>
+                        }
+                    </button>
+                </div>
+
+                <div class="results-table-wrapper">
+                    <table class="results-summary-table">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ФИО</th>
+                            <th>Школа</th>
+                            <th>Итоговые баллы</th>
+                            @for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
+                            {
+                                <th>@taskId</th>
+                            }
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.StudentId</td>
+                                <td>@row.FullName</td>
+                                <td>@row.School</td>
+                                <td>@row.TotalScore</td>
+                                @foreach (var t in row.CorrectByTask)
+                                {
+                                    <td class="@(t ? "correct-cell" : "incorrect-cell")">@(t ? "Да" : "Нет")</td>
+                                }
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="info-section">
+            <h3>Информация</h3>
+            <ul class="info-list">
+                <li><strong>Формат файлов:</strong> .json (файлы из папки results)</li>
+                <li><strong>Максимум за загрузку:</strong> 200 файлов</li>
+                <li><strong>Итоговые баллы:</strong> первичные баллы (сумма по заданиям)</li>
+                <li><strong>Колонки 1–27:</strong> правильность ответа по каждому заданию</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int MaxJsonFiles = 200;
+
+    private bool _isLoading;
+    private bool _isExporting;
+    private bool _isError;
+    private string _message = string.Empty;
+    private List<ResultSummaryRow> _rows = new();
+
+    private async Task SelectJsonFilesAsync()
+    {
+        _isLoading = true;
+        _isError = false;
+        _message = string.Empty;
+        _rows = new List<ResultSummaryRow>();
+        StateHasChanged();
+
+        try
+        {
+            var selectedFiles = await FilePicker.PickJsonFilesAsync(MaxJsonFiles);
+            if (selectedFiles.Count == 0)
+            {
+                _message = "Файлы не выбраны";
+                return;
+            }
+
+            var rows = new List<ResultSummaryRow>();
+            var errors = new List<string>();
+
+            foreach (var filePath in selectedFiles)
+            {
+                try
+                {
+                    var row = await ParseResultFileAsync(filePath);
+                    if (row != null)
+                    {
+                        rows.Add(row);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"{Path.GetFileName(filePath)}: {ex.Message}");
+                }
+            }
+
+            _rows = rows
+                .OrderBy(r => r.StudentId, StringComparer.Ordinal)
+                .ToList();
+
+            if (errors.Count > 0)
+            {
+                _isError = true;
+                _message = $"Загружено: {_rows.Count}. Ошибок: {errors.Count}.";
+            }
+            else
+            {
+                _message = $"Успешно загружено файлов: {_rows.Count}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _message = $"Ошибка загрузки: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<ResultSummaryRow?> ParseResultFileAsync(string filePath)
+    {
+        var json = await File.ReadAllTextAsync(filePath);
+        using var document = JsonDocument.Parse(json);
+
+        var root = document.RootElement;
+        var studentId = GetStringProperty(root, "blank_number");
+        if (string.IsNullOrWhiteSpace(studentId))
+        {
+            return null;
+        }
+
+        var lastName = GetStringProperty(root, "last_name");
+        var firstName = GetStringProperty(root, "first_name");
+        var middleName = GetStringProperty(root, "middle_name");
+        var school = GetStringProperty(root, "school");
+        var fullName = BuildFullName(lastName, firstName, middleName);
+
+        var answers = ParseAnswers(root);
+        var correctByTask = new List<bool>(ExamData.TotalTasks);
+        var totalScore = 0;
+
+        for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
+        {
+            var userAnswer = answers.GetValueOrDefault(taskId, string.Empty);
+            var (score, _) = ExamData.CalculateTaskScore(taskId, userAnswer);
+            var maxScore = ExamData.MaxPoints.GetValueOrDefault(taskId, 0);
+
+            totalScore += score;
+            correctByTask.Add(score == maxScore && maxScore > 0);
+        }
+
+        return new ResultSummaryRow(studentId, fullName, school, totalScore, correctByTask);
+    }
+
+    private Dictionary<int, string> ParseAnswers(JsonElement root)
+    {
+        var answers = new Dictionary<int, string>();
+
+        if (!root.TryGetProperty("results", out var resultsElement) || resultsElement.ValueKind != JsonValueKind.Object)
+        {
+            return answers;
+        }
+
+        foreach (var property in resultsElement.EnumerateObject())
+        {
+            if (!int.TryParse(property.Name, out var taskId))
+            {
+                continue;
+            }
+
+            answers[taskId] = ExtractAnswerValue(property.Value);
+        }
+
+        return answers;
+    }
+
+    private static string ExtractAnswerValue(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            var values = new List<string>();
+
+            foreach (var item in element.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var nested in item.EnumerateArray())
+                    {
+                        if (nested.ValueKind == JsonValueKind.String)
+                        {
+                            values.Add(nested.GetString() ?? string.Empty);
+                        }
+                    }
+                }
+                else if (item.ValueKind == JsonValueKind.String)
+                {
+                    values.Add(item.GetString() ?? string.Empty);
+                }
+                else
+                {
+                    values.Add(item.ToString());
+                }
+            }
+
+            return string.Join(",", values);
+        }
+
+        if (element.ValueKind == JsonValueKind.String)
+        {
+            return element.GetString() ?? string.Empty;
+        }
+
+        return element.ToString();
+    }
+
+
+    private static string GetStringProperty(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var property))
+        {
+            return string.Empty;
+        }
+
+        return property.ValueKind == JsonValueKind.String
+            ? property.GetString() ?? string.Empty
+            : property.ToString();
+    }
+
+    private static string BuildFullName(string lastName, string firstName, string middleName)
+    {
+        return string.Join(" ", new[] { lastName, firstName, middleName }
+            .Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (_rows.Count == 0)
+        {
+            _isError = true;
+            _message = "Нет данных для экспорта";
+            return;
+        }
+
+        _isExporting = true;
+        _isError = false;
+        _message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var reportsDir = EnsureReportsDirectory();
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var filePath = Path.Combine(reportsDir, $"results_summary_{timestamp}.csv");
+
+            var csvContent = BuildCsvContent();
+            await File.WriteAllTextAsync(filePath, csvContent, new UTF8Encoding(true));
+
+            _message = $"CSV сохранён: {filePath}";
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _message = $"Ошибка экспорта CSV: {ex.Message}";
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportXlsxAsync()
+    {
+        if (_rows.Count == 0)
+        {
+            _isError = true;
+            _message = "Нет данных для экспорта";
+            return;
+        }
+
+        _isExporting = true;
+        _isError = false;
+        _message = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var reportsDir = EnsureReportsDirectory();
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var filePath = Path.Combine(reportsDir, $"results_summary_{timestamp}.xlsx");
+
+            await Task.Run(() => BuildXlsxFile(filePath));
+
+            _message = $"XLSX сохранён: {filePath}";
+        }
+        catch (Exception ex)
+        {
+            _isError = true;
+            _message = $"Ошибка экспорта XLSX: {ex.Message}";
+        }
+        finally
+        {
+            _isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private static string EnsureReportsDirectory()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "reports");
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private string BuildCsvContent()
+    {
+        var lines = new List<string>();
+        var headers = BuildHeaders();
+
+        lines.Add(string.Join(";", headers.Select(EscapeCsv)));
+
+        foreach (var row in _rows)
+        {
+            var values = new List<string>
+            {
+                row.StudentId,
+                row.FullName,
+                row.School,
+                row.TotalScore.ToString()
+            };
+
+            values.AddRange(row.CorrectByTask.Select(value => value ? "Да" : "Нет"));
+            lines.Add(string.Join(";", values.Select(EscapeCsv)));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private void BuildXlsxFile(string filePath)
+    {
+        using var document = SpreadsheetDocument.Create(filePath, SpreadsheetDocumentType.Workbook);
+
+        var workbookPart = document.AddWorkbookPart();
+        workbookPart.Workbook = new Workbook();
+
+        var worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+        var sheetData = new SheetData();
+        worksheetPart.Worksheet = new Worksheet(sheetData);
+
+        var sheets = document.WorkbookPart!.Workbook.AppendChild(new Sheets());
+        var sheet = new Sheet
+        {
+            Id = document.WorkbookPart.GetIdOfPart(worksheetPart),
+            SheetId = 1,
+            Name = "ResultsSummary"
+        };
+        sheets.Append(sheet);
+
+        var headerRow = new Row();
+        foreach (var header in BuildHeaders())
+        {
+            headerRow.Append(CreateTextCell(header));
+        }
+
+        sheetData.Append(headerRow);
+
+        foreach (var row in _rows)
+        {
+            var dataRow = new Row();
+            dataRow.Append(CreateTextCell(row.StudentId));
+            dataRow.Append(CreateTextCell(row.FullName));
+            dataRow.Append(CreateTextCell(row.School));
+            dataRow.Append(CreateTextCell(row.TotalScore.ToString()));
+
+            foreach (var isCorrect in row.CorrectByTask)
+            {
+                dataRow.Append(CreateTextCell(isCorrect ? "Да" : "Нет"));
+            }
+
+            sheetData.Append(dataRow);
+        }
+
+        workbookPart.Workbook.Save();
+    }
+
+    private static Cell CreateTextCell(string value)
+    {
+        return new Cell
+        {
+            DataType = CellValues.InlineString,
+            InlineString = new InlineString
+            {
+                Text = new Text(value)
+                {
+                    Space = SpaceProcessingModeValues.Preserve
+                }
+            }
+        };
+    }
+
+    private List<string> BuildHeaders()
+    {
+        var headers = new List<string>
+        {
+            "ID",
+            "ФИО",
+            "Школа",
+            "Итоговые баллы"
+        };
+
+        for (var taskId = 1; taskId <= ExamData.TotalTasks; taskId++)
+        {
+            headers.Add(taskId.ToString());
+        }
+
+        return headers;
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        var escaped = value.Replace("\"", "\"\"");
+        return $"\"{escaped}\"";
+    }
+
+    private sealed record ResultSummaryRow(
+        string StudentId,
+        string FullName,
+        string School,
+        int TotalScore,
+        List<bool> CorrectByTask);
+}

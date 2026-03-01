@@ -3,8 +3,6 @@
     <File Path=".gitignore" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src/TestMaster.Presentation/TestMaster.Presentation.csproj">
-      <Deploy />
-    </Project>
+    <Project Path="src/TestMaster.Presentation/TestMaster.Presentation.csproj" />
   </Folder>
 </Solution>

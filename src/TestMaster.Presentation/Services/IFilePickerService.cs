@@ -2,6 +2,6 @@
 
 public interface IFilePickerService
 {
-    Task<string?> PickExcelFileAsync();
+    Task<IReadOnlyList<string>> PickJsonFilesAsync(int maxFiles);
 }
 
