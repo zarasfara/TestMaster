@@ -79,7 +79,7 @@ public class ExamResultService : IExamResultService
         };
 
         var fileName = BuildFileName(student);
-        var resultsPath = Path.Combine(AppContext.BaseDirectory, ResultsFolderName);
+        var resultsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), ResultsFolderName);
 
         try
         {
