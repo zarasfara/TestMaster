@@ -184,13 +184,17 @@ else
         switch (Id)
         {
             case 3:
+                links.Add($"<a href='/files/{Id}.ods' download='{Id}.ods' class='file-link'>📄 {Id}.ods</a>");
+                break;
             case 9:
             case 18:
+                links.Add($"<a href='/files/{Id}.xlsx' download='{Id}.xlsx' class='file-link'>📄 {Id}.xlsx</a>");
+                break;
             case 22:
                 links.Add($"<a href='/files/{Id}.ods' download='{Id}.ods' class='file-link'>📄 {Id}.ods</a>");
                 break;
             case 10:
-                links.Add($"<a href='/files/{Id}.odt' download='{Id}.odt' class='file-link'>📄 {Id}.odt</a>");
+                links.Add($"<a href='/files/{Id}.doc' download='{Id}.doc' class='file-link'>📄 {Id}.doc</a>");
                 break;
             case 17:
             case 24:

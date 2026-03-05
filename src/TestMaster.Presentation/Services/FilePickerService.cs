@@ -27,6 +27,44 @@ public class FilePickerService : IFilePickerService
 #endif
     }
 
+    private async Task<string?> SaveFileWindowsAsync(string suggestedFileName, string extension)
+    {
+#if WINDOWS
+        var filePicker = new FileSavePicker();
+
+        var window = Application.Current?.Windows[0];
+        if (window?.Handler?.PlatformView is not MauiWinUIWindow winUIWindow)
+        {
+            return null;
+        }
+
+        var hwnd = winUIWindow.WindowHandle;
+        InitializeWithWindow.Initialize(filePicker, hwnd);
+
+        filePicker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+        filePicker.SuggestedFileName = Path.GetFileNameWithoutExtension(suggestedFileName);
+
+        filePicker.FileTypeChoices.Add(
+            extension.ToUpper().Replace(".", "") + " file",
+            new List<string> { extension });
+
+        var file = await filePicker.PickSaveFileAsync();
+
+        return file?.Path;
+#else
+    return null;
+#endif
+    }
+
+    public async Task<string?> SaveFileAsync(string suggestedFileName, string extension)
+    {
+#if WINDOWS
+        return await SaveFileWindowsAsync(suggestedFileName, extension);
+#else
+    return null;
+#endif
+    }
+
 #if WINDOWS
     private async Task<string?> PickExcelFileWindowsAsync()
     {
@@ -81,25 +119,5 @@ public class FilePickerService : IFilePickerService
     }
 #endif
 
-#if ANDROID
-    private async Task<string?> PickExcelFileAndroidAsync()
-    {
-        // На Android используем встроенный файловый диалог через Activities
-        var intent = new Android.Content.Intent(Android.Content.Intent.ActionGetContent);
-        intent.SetType("application/*");
-        intent.PutExtra(Android.Content.Intent.ExtraLocalOnly, true);
-        
-        try
-        {
-            // Это требует более сложной реализации через Activity результаты
-            // Пока возвращаем null
-            return null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-#endif
 }
 

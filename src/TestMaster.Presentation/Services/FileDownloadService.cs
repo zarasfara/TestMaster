@@ -10,10 +10,10 @@ public sealed class FileDownloadService : IFileDownloadService
     private static readonly string[] ExamFiles =
     [
         "3.ods",
-        "9.ods",
-        "10.odt",
+        "9.xlsx",
+        "10.doc",
         "17.txt",
-        "18.ods",
+        "18.xlsx",
         "22.ods",
         "24.txt",
         "26.txt",
