@@ -313,9 +313,17 @@
 
         try
         {
-            var reportsDir = EnsureReportsDirectory();
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var filePath = Path.Combine(reportsDir, $"results_summary_{timestamp}.csv");
+
+            var filePath = await FilePicker.SaveFileAsync(
+                $"results_summary_{timestamp}",
+                ".csv");
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                _message = "Сохранение отменено";
+                return;
+            }
 
             var csvContent = BuildCsvContent();
             await File.WriteAllTextAsync(filePath, csvContent, new UTF8Encoding(true));
@@ -350,9 +358,17 @@
 
         try
         {
-            var reportsDir = EnsureReportsDirectory();
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var filePath = Path.Combine(reportsDir, $"results_summary_{timestamp}.xlsx");
+
+            var filePath = await FilePicker.SaveFileAsync(
+                $"results_summary_{timestamp}",
+                ".xlsx");
+
+            if (string.IsNullOrEmpty(filePath))
+            {
+                _message = "Сохранение отменено";
+                return;
+            }
 
             await Task.Run(() => BuildXlsxFile(filePath));
 
@@ -368,13 +384,6 @@
             _isExporting = false;
             StateHasChanged();
         }
-    }
-
-    private static string EnsureReportsDirectory()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "reports");
-        Directory.CreateDirectory(path);
-        return path;
     }
 
     private string BuildCsvContent()
